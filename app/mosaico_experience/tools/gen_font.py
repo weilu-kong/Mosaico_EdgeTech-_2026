@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Generate exp_font_data.[ch]: a 4-bit anti-aliased glyph subset of Noto Sans CJK JP.
+
+The character set is derived from main/exp_strings.h (every visible string) plus
+ASCII, so a UI string cannot be added without its glyphs being generated. The
+generated files are committed; this script is only needed when strings or font
+styles change (requires Pillow and the Noto Sans CJK JP .ttc files).
+
+Noto Sans CJK is licensed under the SIL Open Font License 1.1 (see
+LICENSES/NotoSansCJK-OFL.txt).
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFont
+
+HERE = Path(__file__).resolve().parent
+MAIN = HERE.parent / "main"
+
+# (enum name, weight, pixel size, charset policy)
+STYLES = [
+    ("EXP_FONT_CAP", "Regular", 16, "full"),
+    ("EXP_FONT_BODY", "Regular", 20, "full"),
+    ("EXP_FONT_TITLE", "Bold", 26, "full"),
+    ("EXP_FONT_HEAD", "Bold", 34, "head"),
+    ("EXP_FONT_NUM", "Bold", 52, "num"),
+]
+NUM_CHARS = "0123456789+-−.:°%µ/ "
+EXTRA_CHARS = "…°µ−×·"  # … ° µ − × ·
+FONT_DIRS = [Path("/usr/share/fonts/opentype/noto"), Path("/System/Library/Fonts"),
+             Path("/Library/Fonts"), Path.home() / "Library/Fonts"]
+
+
+def find_font(weight: str) -> Path:
+    name = f"NotoSansCJK-{weight}.ttc"
+    for directory in FONT_DIRS:
+        candidate = directory / name
+        if candidate.is_file():
+            return candidate
+    raise SystemExit(f"{name} not found; install Noto Sans CJK or pass --font-dir")
+
+
+def parse_strings(path: Path) -> dict[str, str]:
+    result: dict[str, str] = {}
+    pattern = re.compile(r'^#define\s+([TH]_[A-Z0-9_]+)\s+"((?:[^"\\]|\\.)*)"', re.M)
+    for name, value in pattern.findall(path.read_text(encoding="utf-8")):
+        result[name] = value.encode("utf-8").decode("unicode_escape").encode("latin-1").decode("utf-8") \
+            if "\\" in value else value
+    return result
+
+
+def charsets(strings: dict[str, str]) -> dict[str, list[str]]:
+    ascii_chars = {chr(c) for c in range(0x20, 0x7F)}
+    every = set(ascii_chars) | set(EXTRA_CHARS)
+    head = set(ascii_chars)
+    for name, value in strings.items():
+        every.update(value)
+        if name.startswith("H_"):
+            head.update(value)
+    return {"full": sorted(every), "head": sorted(head), "num": sorted(set(NUM_CHARS))}
+
+
+def render(font: ImageFont.FreeTypeFont, ch: str, ascent: int):
+    advance = font.getlength(ch)
+    pad = 4
+    width = int(advance) + pad * 2 + 8
+    height = ascent + int(font.getmetrics()[1]) + pad * 2 + 8
+    image = Image.new("L", (width, height), 0)
+    ImageDraw.Draw(image).text((pad, pad + ascent), ch, fill=255, font=font, anchor="ls")
+    bbox = image.getbbox()
+    if bbox is None:  # blank glyph such as space
+        return round(advance), 0, 0, 0, 0, b""
+    cropped = image.crop(bbox)
+    w, h = cropped.size
+    bx = bbox[0] - pad
+    by = bbox[1] - (pad + ascent)
+    data = cropped.tobytes()
+    packed = bytearray((len(data) + 1) // 2)
+    for index, value in enumerate(data):
+        nib = (value + 8) // 17  # 0..15
+        packed[index >> 1] |= (nib << 4) if (index & 1) == 0 else nib
+    return round(advance), w, h, bx, by, bytes(packed)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--strings", type=Path, default=MAIN / "exp_strings.h")
+    parser.add_argument("--out-dir", type=Path, default=MAIN)
+    parser.add_argument("--font-dir", type=Path)
+    args = parser.parse_args()
+    if args.font_dir:
+        FONT_DIRS.insert(0, args.font_dir)
+
+    strings = parse_strings(args.strings)
+    sets = charsets(strings)
+    source_hash = hashlib.sha256(args.strings.read_bytes()).hexdigest()[:16]
+
+    blob = bytearray()
+    tables: list[tuple[str, list[tuple]]] = []
+    metrics = []
+    report = {"strings_sha256_16": source_hash, "styles": {}}
+    for enum_name, weight, size, policy in STYLES:
+        font = ImageFont.truetype(str(find_font(weight)), size, index=0)  # index 0 = JP
+        ascent, descent = font.getmetrics()
+        glyphs = []
+        for ch in sets[policy]:
+            if ch not in " " and font.getmask(ch).getbbox() is None:
+                raise SystemExit(f"{ch!r} (U+{ord(ch):04X}) has no glyph in {weight} {size}px")
+            advance, w, h, bx, by, packed = render(font, ch, ascent)
+            offset = len(blob)
+            blob.extend(packed)
+            glyphs.append((ord(ch), offset, w, h, bx, by, advance))
+        glyphs.sort()
+        tables.append((enum_name, glyphs))
+        metrics.append((ascent, ascent + descent))
+        report["styles"][enum_name] = {"size": size, "weight": weight, "glyphs": len(glyphs)}
+    report["bitmap_bytes"] = len(blob)
+
+    header = args.out_dir / "exp_font_data.h"
+    source = args.out_dir / "exp_font_data.c"
+    header.write_text(f"""// SPDX-License-Identifier: Apache-2.0
+// GENERATED by tools/gen_font.py from exp_strings.h ({source_hash}). Do not edit.
+// Glyphs: Noto Sans CJK JP (SIL OFL 1.1), 4-bit coverage, packed two pixels/byte.
+#pragma once
+#include <stdint.h>
+
+typedef enum {{
+{chr(10).join(f"    {name}," for name, *_ in STYLES)}
+    EXP_FONT_COUNT
+}} exp_font_id_t;
+
+typedef struct {{
+    uint32_t cp;      /* Unicode code point                         */
+    uint32_t offset;  /* byte offset into the style bitmap          */
+    uint8_t w, h;     /* cropped bitmap size                        */
+    int8_t bx, by;    /* bitmap origin relative to pen x / baseline */
+    uint8_t advance;
+}} exp_glyph_t;
+
+typedef struct {{
+    const exp_glyph_t *glyphs;
+    uint16_t count;
+    uint8_t ascent;
+    uint8_t line_height;
+    uint8_t pixel_size;
+}} exp_font_t;
+
+extern const uint8_t exp_font_bitmap[];
+extern const exp_font_t exp_fonts[EXP_FONT_COUNT];
+""", encoding="utf-8")
+
+    lines = ['// SPDX-License-Identifier: Apache-2.0',
+             f'// GENERATED by tools/gen_font.py from exp_strings.h ({source_hash}). Do not edit.',
+             '#include "exp_font_data.h"', '']
+    for (name, glyphs), _ in zip(tables, metrics):
+        lines.append(f"static const exp_glyph_t k_{name.lower()}[] = {{")
+        for cp, off, w, h, bx, by, adv in glyphs:
+            lines.append(f"    {{0x{cp:04X}, {off}, {w}, {h}, {bx}, {by}, {adv}}},")
+        lines.append("};")
+        lines.append("")
+    lines.append("const exp_font_t exp_fonts[EXP_FONT_COUNT] = {")
+    for (name, glyphs), (ascent, line), style in zip(tables, metrics, STYLES):
+        lines.append(f"    [{name}] = {{k_{name.lower()}, {len(glyphs)}, {ascent}, {line}, {style[2]}}},")
+    lines.append("};")
+    lines.append("")
+    lines.append(f"const uint8_t exp_font_bitmap[{len(blob)}] = {{")
+    for i in range(0, len(blob), 24):
+        lines.append("    " + ",".join(f"0x{b:02X}" for b in blob[i:i + 24]) + ",")
+    lines.append("};")
+    source.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (args.out_dir.parent / "tools" / "font_report.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(report, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,20 @@
+# Added on top of sdkconfig.defaults for the voice build (idf.py -B build_voice -DEXP_VOICE=1 build).
+# Values follow the owner's Full Demo project (sdkconfig.defaults / .mosaico). Nothing here enables a radio.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_voice.csv"
+
+# Speech models are read from the "model" flash partition.
+CONFIG_MODEL_IN_FLASH=y
+CONFIG_SR_WN_WN9_HIESP=y
+CONFIG_SR_WN_WN9L_JA_KONNICHIHAESP_TTS3=y
+CONFIG_SR_MN_EN_MULTINET7_QUANT=y
+CONFIG_SR_NSN_WEBRTC=y
+CONFIG_SR_VADN_WEBRTC=y
+
+# The speech front end needs CPU: the Full Demo runs the S31 at 320 MHz. (Not yet tried with this display pipeline: if the
+# panel shows artefacts, remove this line first.)
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_320=y
+
+# Crash dump to flash (partition "coredump" in partitions_voice.csv): the app shows nothing on the serial port while running
+# (docs/10 B21), so a panic is otherwise invisible. Read it with: scripts/voice_flash.sh coredump <port>.
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y

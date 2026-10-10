@@ -1,0 +1,332 @@
+{
+  "home": {
+    "layout": {
+      "texts": 20,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 0,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_tilted": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_flipped": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice": {
+    "layout": {
+      "texts": 27,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_quiet": {
+    "layout": {
+      "texts": 27,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_no_mic": {
+    "layout": {
+      "texts": 28,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "game_menu": {
+    "layout": {
+      "texts": 22,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "game_countdown": {
+    "layout": {
+      "texts": 7,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 1
+  },
+  "game_playing": {
+    "layout": {
+      "texts": 5,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 2
+  },
+  "game_demo_hard": {
+    "layout": {
+      "texts": 5,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 2
+  },
+  "game_result_success_demo": {
+    "layout": {
+      "texts": 9,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 3
+  },
+  "game_result_timeup": {
+    "layout": {
+      "texts": 9,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 4
+  },
+  "attract_bar_motion": {
+    "layout": {
+      "texts": 28,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": true,
+    "maze_phase": 0
+  },
+  "attract_audio": {
+    "layout": {
+      "texts": 24,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": true,
+    "maze_phase": 0
+  },
+  "device_sim_filled": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "device_unknown": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "device_modules": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "device_long_text": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 1,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": "text truncated"
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_imu_fault": {
+    "layout": {
+      "texts": 35,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "game_menu_no_imu": {
+    "layout": {
+      "texts": 22,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_no_mag": {
+    "layout": {
+      "texts": 30,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "home_no_battery": {
+    "layout": {
+      "texts": 19,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 0,
+    "attract": false,
+    "maze_phase": 0
+  }
+}

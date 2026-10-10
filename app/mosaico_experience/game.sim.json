@@ -1,0 +1,20 @@
+{
+  "schema": "mosaico-game-sim/v1",
+  "sources": [
+    "host/game_module.c",
+    "host/exp_sim_source.c",
+    "main/exp_app.c",
+    "main/exp_audio.c",
+    "main/exp_font_data.c",
+    "main/exp_fusion.c",
+    "main/exp_gfx.c",
+    "main/exp_maze.c",
+    "main/exp_page_audio.c",
+    "main/exp_page_device.c",
+    "main/exp_page_game.c",
+    "main/exp_page_home.c",
+    "main/exp_page_motion.c",
+    "main/exp_text.c",
+    "main/exp_ui.c"
+  ]
+}

@@ -1,0 +1,33 @@
+CONFIG_IDF_TARGET="esp32s31"
+CONFIG_IDF_EXPERIMENTAL_FEATURES=y
+
+# --- Performance / memory (values taken from the official BSP hmi_demo example) -------------
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=12288
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_SPEED_250M=y
+CONFIG_SPIRAM_XIP_FROM_PSRAM=y
+CONFIG_SPIRAM_MEMTEST=n
+CONFIG_SPIRAM_USE_MALLOC=y
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
+# --- Display: raw CO5300 panel, no LVGL ------------------------------------------------------
+CONFIG_BSP_DISPLAY_ENABLE=y
+CONFIG_BSP_DISPLAY_LVGL_ENABLE=n
+CONFIG_BSP_CO5300_ENABLE_TE=n
+
+# --- RF POLICY --------------------------------------------------------------------------------
+# On this IDF (6.2-dev 7b9cc1ac, esp32s31) CONFIG_ESP_WIFI_ENABLED and CONFIG_ESP_COEX_ENABLED are hidden,
+# SoC-derived symbols: they stay "y" whatever is written here, so they are NOT evidence of anything.
+# What is configurable is switched off below. The real guard is the link-content audit of the built image:
+#   python3 scripts/rf_map_check.py firmware/build/mosaico_experience.map firmware/sdkconfig
+# The PHY (RF front-end) driver is still linked by IDF core (sleep handling). RF measurement and the Japan
+# compliance review remain required; this file proves nothing about emissions.
+CONFIG_BT_ENABLED=n
+CONFIG_BT_NIMBLE_ENABLED=n
+CONFIG_BT_BLUEDROID_ENABLED=n
+CONFIG_IEEE802154_ENABLED=n
+CONFIG_OPENTHREAD_ENABLED=n

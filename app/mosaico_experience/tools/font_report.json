@@ -1,0 +1,31 @@
+{
+  "strings_sha256_16": "d31382a696593f9e",
+  "styles": {
+    "EXP_FONT_CAP": {
+      "size": 16,
+      "weight": "Regular",
+      "glyphs": 336
+    },
+    "EXP_FONT_BODY": {
+      "size": 20,
+      "weight": "Regular",
+      "glyphs": 336
+    },
+    "EXP_FONT_TITLE": {
+      "size": 26,
+      "weight": "Bold",
+      "glyphs": 336
+    },
+    "EXP_FONT_HEAD": {
+      "size": 34,
+      "weight": "Bold",
+      "glyphs": 111
+    },
+    "EXP_FONT_NUM": {
+      "size": 52,
+      "weight": "Bold",
+      "glyphs": 20
+    }
+  },
+  "bitmap_bytes": 188505
+}

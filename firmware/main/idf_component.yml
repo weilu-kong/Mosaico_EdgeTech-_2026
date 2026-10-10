@@ -1,0 +1,14 @@
+dependencies:
+  idf: ">=6.2"
+  # Official BSP, taken from the pinned workspace created by scripts/bootstrap_workspace.sh.
+  esp-mosaico-bsp:
+    version: "*"
+    override_path: "../../workspace/esp-mosaico-vibe/submodule/esp-mosaico-bsp/components/esp-mosaico-bsp"
+  # Official hot-plug module manager: used only to read the slot EEPROM descriptors (stage 3c). No module driver is started.
+  mosaico_module_mgr:
+    version: "*"
+    override_path: "../../workspace/esp-mosaico-vibe/submodule/esp-mosaico-bsp/components/mosaico_module_mgr"
+  # Official joystick module driver (ADC + GPIO): used only when the slot manager has identified a valid Handle board (stage 3d).
+  mosaico_module_joystick:
+    version: "*"
+    override_path: "../../workspace/esp-mosaico-vibe/submodule/esp-mosaico-bsp/components/mosaico_module_joystick"

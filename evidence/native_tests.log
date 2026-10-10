@@ -1,0 +1,7 @@
+[done] gcc compile pass over main/ and host/
+[done] clang compile pass over main/ and host/
+maze diff 0: bot solved 150/150, mean 13.9s worst 22.8s
+maze diff 1: bot solved 150/150, mean 14.8s worst 30.4s
+maze diff 2: bot solved 150/150, mean 12.6s worst 24.2s
+audio: 1kHz level -23.0 dB, peak band 13, voice_ratio 1.00, vad 1
+UNIT TESTS PASSED

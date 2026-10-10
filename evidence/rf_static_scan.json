@@ -1,0 +1,7 @@
+{
+  "scanned_files": 26,
+  "findings": [],
+  "result": "PASS (static source scan only)",
+  "status": "RF Verification Pending",
+  "disclaimer": "Software audit only. Not an RF measurement and not a compliance conclusion. Does not cover the ESP-IDF, BSP, Recovery/Vibe Mode firmware, ROM code, bootloader or add-on modules."
+}

@@ -1,0 +1,20 @@
+# macOS / Python
+.DS_Store
+__pycache__/
+*.pyc
+
+# ESP-IDF build output and generated config (rebuilt from sdkconfig.defaults*; see docs/07 and docs/11)
+firmware/build/
+firmware/build_voice/
+firmware/managed_components/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/*.bak
+
+# Upstream SDK/BSP clones: NOT part of this repository. Pinned commits are in versions.lock.json,
+# recreate with scripts/bootstrap_workspace.sh. Never modified by this project.
+workspace/
+
+# Crash dumps read from the board
+*.coredump
+firmware/build_voice/coredump.bin
