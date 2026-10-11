@@ -108,7 +108,8 @@ def main() -> int:
             files += [p for p in sorted(t.rglob("*")) if p.is_file() and (p.suffix in SOURCE_EXT or p.name in CONFIG_NAMES or p.name.startswith("sdkconfig"))]
     findings = []
     for f in files:
-        if f.name in {"rf_check.py"} or "__pycache__" in f.parts or f.name == "exp_font_data.c":
+        if (f.name in {"rf_check.py", "exp_font_data.c"} or
+                any(part in {"__pycache__", ".git", "managed_components"} or part.startswith("build") for part in f.parts)):
             continue
         findings += scan_file(f)
     report = {

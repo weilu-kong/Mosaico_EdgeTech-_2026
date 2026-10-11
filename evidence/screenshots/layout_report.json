@@ -46,7 +46,7 @@
   },
   "audio_voice": {
     "layout": {
-      "texts": 27,
+      "texts": 28,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,
@@ -61,7 +61,7 @@
   },
   "audio_quiet": {
     "layout": {
-      "texts": 27,
+      "texts": 28,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,
@@ -76,7 +76,82 @@
   },
   "audio_no_mic": {
     "layout": {
+      "texts": 29,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice_loading": {
+    "layout": {
+      "texts": 27,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice_ready": {
+    "layout": {
       "texts": 28,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice_listening": {
+    "layout": {
+      "texts": 28,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice_command": {
+    "layout": {
+      "texts": 28,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 2,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "audio_voice_error": {
+    "layout": {
+      "texts": 27,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,
@@ -196,7 +271,7 @@
   },
   "attract_audio": {
     "layout": {
-      "texts": 24,
+      "texts": 25,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,
@@ -240,6 +315,36 @@
     "maze_phase": 0
   },
   "device_modules": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "device_joystick_calibrating": {
+    "layout": {
+      "texts": 31,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 4,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "device_modules_not_probed": {
     "layout": {
       "texts": 31,
       "text_overlaps": 0,
@@ -326,6 +431,36 @@
       "first": ""
     },
     "page": 0,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_compass_calibrated": {
+    "layout": {
+      "texts": 30,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "motion_compass_disturbed": {
+    "layout": {
+      "texts": 30,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 1,
     "attract": false,
     "maze_phase": 0
   }

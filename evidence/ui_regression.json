@@ -1,17 +1,24 @@
 {
-  "total": 19,
-  "passed": 19,
+  "total": 20,
+  "passed": 20,
   "failed": 0,
-  "seconds": 34.7,
+  "seconds": 35.4,
   "notes": {
     "attitude_worst_error_deg": 0.1,
     "magcal_seconds": 19.0,
     "heading_errors_deg": [
-      0.5,
+      0.0,
+      0.1,
+      0.0,
+      0.1,
+      0.0
+    ],
+    "mag_only_heading_errors_deg": [
+      0.7,
       0.2,
+      0.1,
       0.2,
-      0.9,
-      0.1
+      0.3
     ],
     "bot_runs": {
       "0": {
@@ -50,7 +57,7 @@
       "name": "nav_tabs_by_tap",
       "status": "pass",
       "detail": "",
-      "seconds": 2.1
+      "seconds": 1.6
     },
     {
       "name": "home_rows_and_auto_demo",
@@ -62,37 +69,37 @@
       "name": "slide_off_cancels_press",
       "status": "pass",
       "detail": "",
-      "seconds": 1.5
+      "seconds": 1.8
     },
     {
       "name": "attitude_matches_ground_truth",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "relative_yaw_and_reset",
       "status": "pass",
       "detail": "",
-      "seconds": 1.6
+      "seconds": 1.7
     },
     {
       "name": "magnetometer_calibration_and_heading",
       "status": "pass",
       "detail": "",
-      "seconds": 1.8
+      "seconds": 1.7
     },
     {
       "name": "motion_events",
       "status": "pass",
       "detail": "",
-      "seconds": 1.9
+      "seconds": 1.6
     },
     {
       "name": "audio_vad_modes",
       "status": "pass",
       "detail": "",
-      "seconds": 1.9
+      "seconds": 1.7
     },
     {
       "name": "speaker_test_effect",
@@ -122,34 +129,40 @@
       "name": "game_bot_completes_all_difficulties",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "game_result_buttons_and_auto_return",
       "status": "pass",
       "detail": "",
-      "seconds": 2.0
+      "seconds": 1.7
     },
     {
       "name": "game_exit_button",
       "status": "pass",
       "detail": "",
-      "seconds": 1.8
+      "seconds": 1.6
     },
     {
       "name": "idle_return_and_attract_tour",
       "status": "pass",
       "detail": "",
-      "seconds": 1.6
+      "seconds": 1.9
     },
     {
       "name": "attract_is_silent",
       "status": "pass",
       "detail": "",
-      "seconds": 1.8
+      "seconds": 1.7
     },
     {
       "name": "module_and_fault_states",
+      "status": "pass",
+      "detail": "",
+      "seconds": 1.6
+    },
+    {
+      "name": "voice_control",
       "status": "pass",
       "detail": "",
       "seconds": 1.7
@@ -158,7 +171,7 @@
       "name": "determinism",
       "status": "pass",
       "detail": "",
-      "seconds": 3.5
+      "seconds": 3.6
     }
   ],
   "scope": "Host simulator with synthetic sensors; not a device or RF result"
