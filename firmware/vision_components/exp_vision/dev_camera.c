@@ -3,6 +3,7 @@
 // panel): sensor UYVY frame -> PPA (centre square crop, rotate, mirror, scale to 480x480 RGB565) -> byte swap -> published.
 // Every stage is timed with esp_timer and reported; nothing here is assumed. No radio, no network.
 #include "dev_camera.h"
+#include "dev_face_detect.h"
 
 #include <inttypes.h>
 #include <string.h>
@@ -165,6 +166,7 @@ static esp_err_t convert_and_publish(const mosaico_camera_frame_t *fr, const dev
     if (xSemaphoreTake(s_view_lock, pdMS_TO_TICKS(200)) != pdTRUE) { *what = "view lock"; return ESP_ERR_TIMEOUT; }
     s_pub = *w;
     xSemaphoreGive(s_view_lock);
+    dev_face_detect_submit_frame(out);
     *w ^= 1;
     portENTER_CRITICAL(&s_lock);
     s_st.scale_exact = exact;
@@ -337,6 +339,7 @@ void dev_cam_init(void)
         return;
     }
     st_set(DEV_CAM_OFF, "off", 0);
+    dev_face_detect_init();
     ESP_LOGI(TAG, "camera task ready (idle: nothing is started until the camera view is opened)");
 }
 

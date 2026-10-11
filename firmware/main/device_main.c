@@ -34,6 +34,7 @@ static dev_voice_status_t s_voice;     /* snapshot of the speech engine, refresh
 #if EXP_VISION
 #include "dev_camera.h"
 #include "dev_camera_gate.h"
+#include "dev_face_detect.h"
 #endif
 #include "dev_sensors_core.h"
 #include "exp_dbglog.h"
@@ -641,6 +642,7 @@ static void cam_view_open(void)
         DBG_STAGE("camera");
         dev_cam_set_orient(s_cam_orient);
         dev_cam_request(true, g.allow_unidentified);
+        dev_face_detect_start();
     } else {
         ESP_LOGW(TAG, "camera view refused: %s", g.reason);
     }
@@ -648,6 +650,7 @@ static void cam_view_open(void)
 
 static void cam_view_close(void)
 {
+    dev_face_detect_stop();
     dev_cam_request(false, false);
     s_cam_view = false;
     s_cam_refusal = NULL;
@@ -677,7 +680,7 @@ static bool cam_view_tap(int x, int y)
 
 static void cam_text(const char *t, int line, Color c)
 {
-    exp_text(t, 240, 346 + line * 17, EXP_FONT_CAP, c, EXP_ALIGN_CENTER);
+    exp_text(t, 240, 318 + line * 17, EXP_FONT_CAP, c, EXP_ALIGN_CENTER);
 }
 
 /* Fills the frame with the newest camera picture (or black) and writes the measured numbers over its lower part. */
@@ -685,10 +688,23 @@ static void draw_cam_view(void)
 {
     dev_cam_status_t st;
     dev_cam_take(&st);
-    const Color yel = {255, 255, 0, 255}, red = {255, 110, 110, 255}, wht = {235, 235, 235, 255};
+    dev_face_result_t face_res = {0};
+    dev_face_detect_get_result(&face_res);
+    const Color yel = {255, 255, 0, 255}, red = {255, 110, 110, 255}, wht = {235, 235, 235, 255}, grn = {80, 255, 120, 255};
     const bool have = s_cam_refusal == NULL && dev_cam_copy_view(s_fb[s_cur]);
     if (!have) exp_rect(0, 0, 480, 480, (Color){0, 0, 0, 255});
-    exp_rect(40, 338, 400, 122, (Color){0, 0, 0, 190});
+
+    if (face_res.found && have) {
+        const dev_face_box_t b = dev_face_box_clamp(face_res.box, 480, 480);
+        if (b.w > 4 && b.h > 4) {
+            exp_rect(b.x, b.y, b.w, 2, yel);
+            exp_rect(b.x, b.y + b.h - 2, b.w, 2, yel);
+            exp_rect(b.x, b.y, 2, b.h, yel);
+            exp_rect(b.x + b.w - 2, b.y, 2, b.h, yel);
+        }
+    }
+
+    exp_rect(30, 310, 420, 150, (Color){0, 0, 0, 190});
     static const char *const ph[] = {"off", "starting", "RUNNING", "ERROR", "stopping"};
     char l[96];
     if (s_cam_refusal) {
@@ -699,24 +715,42 @@ static void draw_cam_view(void)
     }
     snprintf(l, sizeof(l), "camera %s: %s", ph[st.phase <= DEV_CAM_STOPPING ? st.phase : 0], st.detail ? st.detail : "");
     cam_text(l, 0, st.phase == DEV_CAM_ERROR ? red : yel);
+
+    if (face_res.found) {
+        const dev_face_box_t b = face_res.box;
+        snprintf(l, sizeof(l), "face FOUND (%.0f%%)  infer %d.%d ms (%.1f fps)  box [%d,%d,%d,%d]",
+                 (double)(face_res.score * 100.0f),
+                 face_res.infer_us / 1000, (face_res.infer_us % 1000) / 100,
+                 (double)face_res.fps, b.x, b.y, b.w, b.h);
+        cam_text(l, 1, grn);
+    } else {
+        snprintf(l, sizeof(l), "face NONE  infer %d.%d ms (%.1f fps)  runs %u",
+                 face_res.infer_us / 1000, (face_res.infer_us % 1000) / 100,
+                 (double)face_res.fps, (unsigned)face_res.total_runs);
+        cam_text(l, 1, yel);
+    }
+
+    snprintf(l, sizeof(l), "cam %.1f fps  wait %d.%d ppa %d.%d swap %d.%d loop %d.%d ms",
+             (double)st.fps,
+             st.wait_us / 1000, (st.wait_us % 1000) / 100,
+             st.ppa_us / 1000, (st.ppa_us % 1000) / 100,
+             st.swap_us / 1000, (st.swap_us % 1000) / 100,
+             st.total_us / 1000, (st.total_us % 1000) / 100);
+    cam_text(l, 2, wht);
+
     const uint32_t f = st.src_fmt;
     snprintf(l, sizeof(l), "src %ux%u %c%c%c%c crop %u scale %s  open %d ms", (unsigned)st.src_w, (unsigned)st.src_h,
              f ? (char)(f & 255) : '-', f ? (char)((f >> 8) & 255) : '-', f ? (char)((f >> 16) & 255) : '-',
              f ? (char)((f >> 24) & 255) : '-', (unsigned)st.crop, st.scale_exact ? "exact" : "rounded", st.open_ms);
-    cam_text(l, 1, wht);
-    snprintf(l, sizeof(l), "fps %.1f  frames %u  capture err %u  restarts %u  err %d", (double)st.fps, (unsigned)st.frames,
-             (unsigned)st.capture_fail, (unsigned)st.restarts, st.last_err);
-    cam_text(l, 2, wht);
-    snprintf(l, sizeof(l), "wait %d.%d ppa %d.%d swap %d.%d loop %d.%d ms", st.wait_us / 1000, (st.wait_us % 1000) / 100,
-             st.ppa_us / 1000, (st.ppa_us % 1000) / 100, st.swap_us / 1000, (st.swap_us % 1000) / 100, st.total_us / 1000,
-             (st.total_us % 1000) / 100);
     cam_text(l, 3, wht);
+
     const dev_cam_orient_t o = dev_cam_orient(st.orient);
     snprintf(l, sizeof(l), "orient %d/%d: rot %d mirror x%d y%d  psram free %u KB", st.orient + 1, DEV_CAM_ORIENT_N, o.rot_deg,
              o.mirror_x, o.mirror_y, (unsigned)(st.psram_free / 1024));
     cam_text(l, 4, wht);
+
     cam_text("tap: next orientation   top-right corner: leave", 5, wht);
-    cam_text("test view - measured values only, not part of the UI", 6, wht);
+    cam_text("ESPDet Face Benchmark - measured values only", 6, wht);
 }
 #endif
 
