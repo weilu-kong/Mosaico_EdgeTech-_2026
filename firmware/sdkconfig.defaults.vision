@@ -27,3 +27,8 @@ CONFIG_ESP_VIDEO_ENABLE_DVP_VIDEO_DEVICE=y
 
 # Crash dump to flash (partition "coredump"): the app has no console while it runs. Read it with scripts/vision_flash.sh coredump <port>.
 CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
+
+# Face detection benchmark (stage 4b): model embedded in flash rodata (no partition needed)
+CONFIG_HUMAN_FACE_DETECT_MODEL_IN_FLASH_RODATA=y
+CONFIG_FLASH_HUMAN_FACE_DETECT_MSRMNP_S8_V1=y
+CONFIG_DEFAULT_HUMAN_FACE_DETECT_MODEL=0

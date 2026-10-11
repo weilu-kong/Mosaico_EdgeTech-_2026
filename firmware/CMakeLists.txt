@@ -68,7 +68,7 @@ if(EXP_VISION)
 endif()
 project(mosaico_experience VERSION 0.3.0)
 
-if(EXP_VOICE)
+if(EXP_VOICE OR EXP_VISION)
     # esp-dl (pulled in by esp-sr) is C++ that newer GCC releases flag with -Wnon-c-typedef-for-linkage; the owner's
     # Full Demo needed the same exception. Applied only when the compiler knows the option and the target exists.
     include(CheckCXXCompilerFlag)

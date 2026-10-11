@@ -2,6 +2,6 @@
 # Reads frames from the official BSP camera module (mosaico_module_camera, left slot, DVP) and converts them with the PPA.
 # No network, no radio.
 idf_component_register(
-    SRCS "dev_camera.c"
+    SRCS "dev_camera.c" "dev_face_detect.cpp"
     INCLUDE_DIRS "include"
-    PRIV_REQUIRES mosaico_module_camera esp_driver_ppa esp_mm esp_timer freertos heap log)
+    PRIV_REQUIRES mosaico_module_camera esp_driver_ppa esp_mm esp_timer freertos heap log human_face_detect esp-dl)
