@@ -1,0 +1,29 @@
+# Added on top of sdkconfig.defaults for the camera build (idf.py -B build_vision -DEXP_VISION=1 build).
+# Values follow the official BSP examples camera_lcd_preview and ai_model_gallery (same board, same camera module).
+# Nothing here enables a radio.
+
+# Same partition table as the voice build, so the board's table does not change (see CMakeLists.txt).
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_voice.csv"
+
+# GPIO33 is camera D2 and shares the USB Serial/JTAG D- pad: no USB Serial/JTAG console in this image.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+# CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG is not set
+# CONFIG_USJ_ENABLE_USB_SERIAL_JTAG is not set
+
+# PSRAM settings of the official camera examples (octal PSRAM; small allocations stay in internal RAM for DMA descriptors)
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=4096
+CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY=y
+CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY=y
+
+# Camera module profiles (OV3640 UYVY 1024x768 @25 fps is the default of the official examples)
+CONFIG_MOSAICO_MODULE_CAMERA=y
+CONFIG_CAMERA_OV3640=y
+CONFIG_CAMERA_OV3640_AUTO_DETECT_DVP_INTERFACE_SENSOR=y
+CONFIG_CAMERA_OV3640_DVP_YUV422_UYVY_1024X768_25FPS=y
+CONFIG_CAMERA_OV3640_DVP_DEFAULT_FMT_YUV422_UYVY_1024X768_25FPS=y
+CONFIG_ESP_VIDEO_ENABLE_DVP_VIDEO_DEVICE=y
+
+# Crash dump to flash (partition "coredump"): the app has no console while it runs. Read it with scripts/vision_flash.sh coredump <port>.
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y

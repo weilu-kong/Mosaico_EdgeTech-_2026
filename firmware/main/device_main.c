@@ -31,6 +31,10 @@
 #include "dev_voice.h"
 static dev_voice_status_t s_voice;     /* snapshot of the speech engine, refreshed by fill_sensors() and the I/O log page */
 #endif
+#if EXP_VISION
+#include "dev_camera.h"
+#include "dev_camera_gate.h"
+#endif
 #include "dev_sensors_core.h"
 #include "exp_dbglog.h"
 #include "exp_gfx.h"
@@ -58,7 +62,14 @@ static const char *TAG = "exp_main";
 #else
 #define FW_VOICE_TAG "-novoice"
 #endif
-#define FW_VERSION "0.8.1-stage3e" FW_VOICE_TAG FW_PROFILE
+#if EXP_VISION
+#define FW_VISION_TAG "-vision"
+#define FW_BASE_VERSION "0.9.0-stage4a"
+#else
+#define FW_VISION_TAG ""
+#define FW_BASE_VERSION "0.8.1-stage3e"
+#endif
+#define FW_VERSION FW_BASE_VERSION FW_VOICE_TAG FW_VISION_TAG FW_PROFILE
 #define TICK_MS 33
 
 /* Development aid (stage 3a): the USB-C port has no console while the app runs (the S31 board's USB-C is a
@@ -605,6 +616,110 @@ static bool log_view_tap(int x, int y)
 }
 #endif
 
+#if EXP_VISION
+#if !EXP_DBGLOG
+#error "the camera test view (stage 4a) is a development aid: build it with EXP_DBGLOG=1"
+#endif
+/* ---- Camera test view (stage 4a, development only) ------------------------------------------------------------------
+ * Not part of the exhibition UI. Triple-tap the bottom centre of any screen (within 2 s) to open it; tap the top-right corner
+ * to leave; any other tap cycles the eight rotation / mirror presets (the camera's mounting is not documented, so it is
+ * settled by looking at the picture). Opening it starts the BSP camera on the LEFT slot and, by hardware design, takes the
+ * USB Serial/JTAG pad (camera D2): leaving the view releases it. Every number on the panel is measured on this board. */
+static bool s_cam_view;
+static int s_cam_orient;
+static const char *s_cam_refusal;          /* non-NULL: the slot check refused to start the camera (text shown on the panel) */
+
+static void cam_view_open(void)
+{
+    dev_slots_take(&s_slots);
+    const dev_cam_gate_t g = dev_cam_gate(s_slots.cls[0], s_slots.descriptor_valid[0]);
+    s_cam_view = true;
+    s_cam_refusal = g.allow ? NULL : g.reason;
+    if (g.allow) {
+        if (g.allow_unidentified) ESP_LOGW(TAG, "camera view: %s", g.reason);
+        else ESP_LOGI(TAG, "camera view: %s", g.reason);
+        DBG_STAGE("camera");
+        dev_cam_set_orient(s_cam_orient);
+        dev_cam_request(true, g.allow_unidentified);
+    } else {
+        ESP_LOGW(TAG, "camera view refused: %s", g.reason);
+    }
+}
+
+static void cam_view_close(void)
+{
+    dev_cam_request(false, false);
+    s_cam_view = false;
+    s_cam_refusal = NULL;
+    DBG_STAGE("loop");
+    ESP_LOGI(TAG, "camera view closed");
+}
+
+/* Called on every new touch-down. Returns true when the tap belongs to the camera view and must not reach the app. */
+static bool cam_view_tap(int x, int y)
+{
+    if (s_cam_view) {
+        if (x >= 390 && y < 90) { cam_view_close(); return true; }
+        s_cam_orient = dev_cam_orient_next(s_cam_orient);
+        dev_cam_set_orient(s_cam_orient);
+        return true;
+    }
+    if (s_log_view) return false;                              /* taps on the log view scroll it */
+    static int64_t first_us;
+    static int taps;
+    if (y >= 400 && x >= 150 && x < 330) {
+        const int64_t t = esp_timer_get_time();
+        if (taps == 0 || t - first_us > 2000000) { taps = 0; first_us = t; }
+        if (++taps >= 3) { taps = 0; cam_view_open(); return true; }
+    }
+    return false;
+}
+
+static void cam_text(const char *t, int line, Color c)
+{
+    exp_text(t, 240, 346 + line * 17, EXP_FONT_CAP, c, EXP_ALIGN_CENTER);
+}
+
+/* Fills the frame with the newest camera picture (or black) and writes the measured numbers over its lower part. */
+static void draw_cam_view(void)
+{
+    dev_cam_status_t st;
+    dev_cam_take(&st);
+    const Color yel = {255, 255, 0, 255}, red = {255, 110, 110, 255}, wht = {235, 235, 235, 255};
+    const bool have = s_cam_refusal == NULL && dev_cam_copy_view(s_fb[s_cur]);
+    if (!have) exp_rect(0, 0, 480, 480, (Color){0, 0, 0, 255});
+    exp_rect(40, 338, 400, 122, (Color){0, 0, 0, 190});
+    static const char *const ph[] = {"off", "starting", "RUNNING", "ERROR", "stopping"};
+    char l[96];
+    if (s_cam_refusal) {
+        cam_text("camera NOT started", 0, red);
+        cam_text(s_cam_refusal, 1, red);
+        cam_text("top-right corner: leave", 6, wht);
+        return;
+    }
+    snprintf(l, sizeof(l), "camera %s: %s", ph[st.phase <= DEV_CAM_STOPPING ? st.phase : 0], st.detail ? st.detail : "");
+    cam_text(l, 0, st.phase == DEV_CAM_ERROR ? red : yel);
+    const uint32_t f = st.src_fmt;
+    snprintf(l, sizeof(l), "src %ux%u %c%c%c%c crop %u scale %s  open %d ms", (unsigned)st.src_w, (unsigned)st.src_h,
+             f ? (char)(f & 255) : '-', f ? (char)((f >> 8) & 255) : '-', f ? (char)((f >> 16) & 255) : '-',
+             f ? (char)((f >> 24) & 255) : '-', (unsigned)st.crop, st.scale_exact ? "exact" : "rounded", st.open_ms);
+    cam_text(l, 1, wht);
+    snprintf(l, sizeof(l), "fps %.1f  frames %u  capture err %u  restarts %u  err %d", (double)st.fps, (unsigned)st.frames,
+             (unsigned)st.capture_fail, (unsigned)st.restarts, st.last_err);
+    cam_text(l, 2, wht);
+    snprintf(l, sizeof(l), "wait %d.%d ppa %d.%d swap %d.%d loop %d.%d ms", st.wait_us / 1000, (st.wait_us % 1000) / 100,
+             st.ppa_us / 1000, (st.ppa_us % 1000) / 100, st.swap_us / 1000, (st.swap_us % 1000) / 100, st.total_us / 1000,
+             (st.total_us % 1000) / 100);
+    cam_text(l, 3, wht);
+    const dev_cam_orient_t o = dev_cam_orient(st.orient);
+    snprintf(l, sizeof(l), "orient %d/%d: rot %d mirror x%d y%d  psram free %u KB", st.orient + 1, DEV_CAM_ORIENT_N, o.rot_deg,
+             o.mirror_x, o.mirror_y, (unsigned)(st.psram_free / 1024));
+    cam_text(l, 4, wht);
+    cam_text("tap: next orientation   top-right corner: leave", 5, wht);
+    cam_text("test view - measured values only, not part of the UI", 6, wht);
+}
+#endif
+
 static uint32_t now_us(void) { return (uint32_t)esp_timer_get_time(); }
 
 #if EXP_USE_SLOTS
@@ -768,6 +883,11 @@ void app_main(void)
     dev_sensors_start();
 #endif
 
+#if EXP_VISION
+    DBG_STAGE("camera_task");
+    dev_cam_init();               /* creates the task only; the camera is opened when the test view is */
+#endif
+
     DBG_STAGE("app_create");
     exp_surface_attach(s_fb[0], BSP_LCD_H_RES, present, NULL);
     const exp_app_config_t acfg = {.now_us = now_us, .debug_flags = 0};
@@ -788,6 +908,9 @@ void app_main(void)
     bool app_down = false;      /* the app has been told about a press that is not released yet */
 #if EXP_DBGLOG
     bool swallow = false;       /* this touch was consumed by the log gesture / log view */
+#endif
+#if EXP_VISION
+    bool cam_swallow = false;   /* this touch was consumed by the camera test view */
 #endif
     int last_x = 0, last_y = 0;
     uint32_t last_touch_ms __attribute__((unused)) = (uint32_t)(esp_timer_get_time() / 1000);
@@ -829,10 +952,17 @@ void app_main(void)
             const bool have = esp_lcd_touch_read_data(touch) == ESP_OK &&
                               esp_lcd_touch_get_data(touch, pt, &n, 1) == ESP_OK && n > 0;
             if (have) { last_x = pt[0].x; last_y = pt[0].y; last_touch_ms = (uint32_t)(esp_timer_get_time() / 1000); }
+#if EXP_VISION
+            if (have && !was_down) cam_swallow = cam_view_tap(last_x, last_y);   /* decided once per touch */
+            if (!have) cam_swallow = false;
+            const bool cam_owns __attribute__((unused)) = s_cam_view || cam_swallow;
+#else
+            const bool cam_owns __attribute__((unused)) = false;
+#endif
 #if EXP_DBGLOG
-            if (have && !was_down) swallow = log_view_tap(last_x, last_y);   /* decided once per touch */
+            if (have && !was_down && !cam_owns) swallow = log_view_tap(last_x, last_y);   /* decided once per touch */
             if (!have) swallow = false;
-            if (s_log_view || swallow) {
+            if (s_log_view || swallow || cam_owns) {
                 /* the log view owns the touch: the app sees nothing (a press it already got is released) */
                 if (app_down) { exp_app_pointer(app, last_x, last_y, false); app_down = false; }
             } else
@@ -911,6 +1041,9 @@ void app_main(void)
         s_av_upd_us += ((r0 - u0) - s_av_upd_us) / 16;
         BeginDrawing();
         if (MosaicoFastFrameAvailable()) {
+#if EXP_VISION
+            if (s_cam_view) draw_cam_view(); else
+#endif
             exp_app_render(app);
 #if EXP_TIMING_OVERLAY
             ov_now = last_total;

@@ -18,3 +18,5 @@ workspace/
 # Crash dumps read from the board
 *.coredump
 firmware/build_voice/coredump.bin
+
+firmware/build_vision/

@@ -37,6 +37,9 @@ cc -std=c11 -O1 -g -fsanitize=address,undefined -Wall -Wextra -Wpedantic -Werror
 step "offline voice helpers (48->16 kHz low-pass, slot choice, speaker mask, command table, status machine; gcc with ASan/UBSan)"
 cc -std=c11 -O1 -g -fsanitize=address,undefined -Wall -Wextra -Wpedantic -Werror -I "$ROOT/firmware/main" -I "$APP/main" \
    "$APP/tests/dev_voice_core_test.c" -o /tmp/dev_voice_core_bin -lm && /tmp/dev_voice_core_bin || rc=1
+step "camera preview helpers (crop geometry, byte swap, orientation presets, fps, slot gate; gcc with ASan/UBSan)"
+cc -std=c11 -O1 -g -fsanitize=address,undefined -Wall -Wextra -Wpedantic -Werror -I "$ROOT/firmware/main" -I "$APP/main" \
+   "$APP/tests/dev_camera_core_test.c" -o /tmp/dev_camera_core_bin -lm && /tmp/dev_camera_core_bin || rc=1
 step "static RF source scan"
 python3 "$ROOT/scripts/rf_check.py" | tee "$EV/rf_static_scan.json" || rc=1
 step "Host behavioural regression"

@@ -1,0 +1,8 @@
+# Official BSP camera module, taken from the pinned workspace created by scripts/bootstrap_workspace.sh (same pin as main/).
+# It pulls espressif/esp_video (V4L2 layer, DVP camera sensors) from the component registry; the dependency lock of the
+# vision build (dependencies.vision.lock) records the exact versions after the first build.
+dependencies:
+  idf: ">=6.2"
+  mosaico_module_camera:
+    version: "*"
+    override_path: "../../../workspace/esp-mosaico-vibe/submodule/esp-mosaico-bsp/components/mosaico_module_camera"

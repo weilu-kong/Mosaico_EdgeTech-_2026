@@ -13,11 +13,21 @@ if(EXP_VOICE_ON)
     set(EXP_VOICE_REQ exp_voice)
 endif()
 
+# Camera preview (stage 4a): same mechanism, set by the top-level CMakeLists with -DEXP_VISION=1.
+set(EXP_VISION_ON OFF)
+if(EXP_VISION OR "$ENV{EXP_VISION}" STREQUAL "1")
+    set(EXP_VISION_ON ON)
+endif()
+set(EXP_VISION_REQ "")
+if(EXP_VISION_ON)
+    set(EXP_VISION_REQ exp_vision)
+endif()
+
 idf_component_register(
     SRCS "device_main.c" "dev_sensors.c" "dev_audio.c" "dev_slots.c" "dev_joystick.c" "dev_watchdog.c" "dev_rf_probe.c" ${EXP_CORE_SRCS}
     INCLUDE_DIRS "." "${EXP_CORE_DIR}"
     REQUIRES exp_surface exp_dbglog
-    PRIV_REQUIRES esp-mosaico-bsp mosaico_module_mgr mosaico_module_joystick espressif__esp_lcd_touch esp_lcd esp_timer esp_driver_gpio esp_system freertos heap log ${EXP_VOICE_REQ})
+    PRIV_REQUIRES esp-mosaico-bsp mosaico_module_mgr mosaico_module_joystick espressif__esp_lcd_touch esp_lcd esp_timer esp_driver_gpio esp_system freertos heap log ${EXP_VOICE_REQ} ${EXP_VISION_REQ})
 
 # Exhibition profile: idf.py -DEXP_RELEASE=1 build   (no log view / timing overlay / boot benchmark; version string ends in -rel)
 option(EXP_RELEASE "Build the exhibition profile (debug aids removed)" OFF)
@@ -28,4 +38,9 @@ endif()
 # Offline speech control (set by the top-level CMakeLists with -DEXP_VOICE=1).
 if(EXP_VOICE_ON)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE EXP_VOICE=1)
+endif()
+
+# Camera preview (set by the top-level CMakeLists with -DEXP_VISION=1).
+if(EXP_VISION_ON)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE EXP_VISION=1)
 endif()
