@@ -39,9 +39,8 @@
 | 3c | 麦克风、扬声器、马达、扩展槽探测、运行时 RF 探针 | 已编码 + 主机测试；设备验证**未执行**（`docs/10` B39） |
 | 3d | 摇杆、烧屏调光、看门狗、磁场干扰判断、展台发布配置 | 已编码 + 主机测试；设备验证**未执行**（`docs/10` B40） |
 | 3e | 日语离线语音操作（ESP‑SR） | 已编码、已编译、已烧录（0.8.x）；**识别率、误唤醒率未测量**（`docs/11`、`docs/10` B42/B43） |
+| 4a | 摄像头预览与帧时间测量（`-DEXP_VISION=1`，`docs/12`） | 已编码 + 主机测试；**未用真实 IDF 编译、未烧录、无实测数字** |
 | 4–5 | 全面设备验证、稳定性、RF 实测、运营 | **未开始** |
-
-> 分支 `feature/vision` 上的阶段 4a（摄像头预览与帧时间测量）见下文"视觉分支"。
 
 ---
 
@@ -58,7 +57,7 @@ firmware/  路线 B：独立 ESP-IDF 工程
   components/          exp_surface（绘制层）、exp_dbglog（屏幕日志）
   voice_components/    exp_voice（ESP-SR 日语语音，仅 -DEXP_VOICE=1）
   partitions_voice.csv 语音构建的分区表
-docs/      01–11 文档（简体中文；12 仅在 feature/vision 分支）
+docs/      01–12 文档（简体中文）
 scripts/   run_all_tests.sh · run_preview.sh · rf_check.py · rf_map_check.py · check_build.sh · release_check.py
            mac_env_audit.sh（只读）· bootstrap_workspace.sh（默认 dry-run）· voice_flash.sh
 evidence/  测试日志、截图（22 屏）、布局报告、RF 静态扫描结果
@@ -147,7 +146,7 @@ python3 ../scripts/rf_map_check.py build/mosaico_experience.map sdkconfig   # �
 
 ---
 
-## 视觉分支（`feature/vision`，阶段 4a）
+## 视觉（阶段 4a，开发分支 `feature/vision`）
 
 在稳定版本 `stable-stage3e-0.8.1`（tag）之上开发摄像头功能。当前只有 4a：用官方 BSP 的摄像头模块（左槽，DVP）→ PPA 裁剪/旋转/缩放 → 480×480 预览，并在屏幕上显示**板上实测**的 fps 与各阶段耗时（`-DEXP_VISION=1`，目录 `build_vision`）。
 
@@ -174,7 +173,7 @@ python3 ../scripts/rf_map_check.py build/mosaico_experience.map sdkconfig   # �
 | `docs/09_EXHIBITION_OPERATION.md` | 展会运营说明 |
 | `docs/10_KNOWN_ISSUES.md` | 已知问题（B 编号） |
 | `docs/11_VOICE_SETUP.md` | 日语离线语音 |
-| `docs/12_VISION_SETUP.md` | 摄像头（仅 `feature/vision`） |
+| `docs/12_VISION_SETUP.md` | 摄像头（阶段 4a） |
 
 文档为简体中文；UI 文案为日语。
 

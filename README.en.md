@@ -37,9 +37,8 @@ Status labels used throughout (never mixed): **planned → coded → compiled �
 | 3c | Microphone, speaker, motor, expansion-slot probing, runtime RF probe | Coded + host tests; device verification **not executed** (`docs/10` B39) |
 | 3d | Joystick, burn-in dimming, watchdog, magnetic-disturbance check, release profile | Coded + host tests; device verification **not executed** (`docs/10` B40) |
 | 3e | Offline Japanese voice control (ESP-SR) | Coded, compiled, flashed (0.8.x); **recognition rate and false-wake rate not measured** (`docs/11`, `docs/10` B42/B43) |
+| 4a | Camera preview and frame-time measurement (`-DEXP_VISION=1`, `docs/12`) | Coded + host tests; **not built with the real IDF, not flashed, no measured numbers** |
 | 4–5 | Full device verification, endurance, RF measurement, operations | **Not started** |
-
-> Stage 4a (camera preview and frame-time measurement) lives on the `feature/vision` branch, see "Vision branch" below.
 
 ---
 
@@ -56,7 +55,7 @@ firmware/  Route B: a standalone ESP-IDF project
   components/          exp_surface (drawing layer), exp_dbglog (on-screen log)
   voice_components/    exp_voice (ESP-SR Japanese voice; only with -DEXP_VOICE=1)
   partitions_voice.csv partition table of the voice build
-docs/      01–11 documents (Simplified Chinese; 12 exists on feature/vision only)
+docs/      01–12 documents (Simplified Chinese)
 scripts/   run_all_tests.sh · run_preview.sh · rf_check.py · rf_map_check.py · check_build.sh · release_check.py
            mac_env_audit.sh (read-only) · bootstrap_workspace.sh (dry-run by default) · voice_flash.sh
 evidence/  test logs, screenshots (22 screens), layout report, RF static-scan result
@@ -143,7 +142,7 @@ It covers font-data reproducibility, gcc/clang `-Werror` builds and native unit 
 
 ---
 
-## Vision branch (`feature/vision`, stage 4a)
+## Vision (stage 4a, development branch `feature/vision`)
 
 Camera work is developed on top of the stable tag `stable-stage3e-0.8.1`. Only 4a exists so far: the official BSP camera module (left slot, DVP) → PPA crop / rotate / scale → a 480×480 preview, with fps and per-stage times **measured on the board** drawn on screen (`-DEXP_VISION=1`, build dir `build_vision`).
 
@@ -170,7 +169,7 @@ To go back to the stable voice firmware: `git checkout stable-stage3e-0.8.1`.
 | `docs/09_EXHIBITION_OPERATION.md` | Exhibition operation notes |
 | `docs/10_KNOWN_ISSUES.md` | Known issues (numbered B…) |
 | `docs/11_VOICE_SETUP.md` | Offline Japanese voice |
-| `docs/12_VISION_SETUP.md` | Camera (`feature/vision` only) |
+| `docs/12_VISION_SETUP.md` | Camera (stage 4a) |
 
 ---
 
