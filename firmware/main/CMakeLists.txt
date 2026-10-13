@@ -27,7 +27,8 @@ idf_component_register(
     SRCS "device_main.c" "dev_sensors.c" "dev_audio.c" "dev_slots.c" "dev_joystick.c" "dev_watchdog.c" "dev_rf_probe.c" ${EXP_CORE_SRCS}
     INCLUDE_DIRS "." "${EXP_CORE_DIR}"
     REQUIRES exp_surface exp_dbglog
-    PRIV_REQUIRES esp-mosaico-bsp mosaico_module_mgr mosaico_module_joystick espressif__esp_lcd_touch esp_lcd esp_timer esp_driver_gpio esp_system freertos heap log ${EXP_VOICE_REQ} ${EXP_VISION_REQ})
+    PRIV_REQUIRES esp-mosaico-bsp mosaico_module_mgr mosaico_module_joystick espressif__esp_lcd_touch esp_lcd esp_timer esp_driver_gpio esp_system freertos heap log esp_iris ${EXP_VOICE_REQ} ${EXP_VISION_REQ})
+
 
 # Exhibition profile: idf.py -DEXP_RELEASE=1 build   (no log view / timing overlay / boot benchmark; version string ends in -rel)
 option(EXP_RELEASE "Build the exhibition profile (debug aids removed)" OFF)

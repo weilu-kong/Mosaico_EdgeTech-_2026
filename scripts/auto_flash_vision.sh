@@ -16,20 +16,29 @@ for i in {1..300}; do
     [[ -e "$dev" ]] || continue
     [[ "$dev" == *11201* ]] && continue # Always skip the other project's S3
 
-    echo "Found candidate serial port: $dev, probing MAC..."
-    # Probe chip and MAC
-    OUT="$(esptool --chip esp32s31 -p "$dev" --before no-reset --after no-reset chip-id 2>&1 || true)"
-    if echo "$OUT" | grep -qi "$EXPECT_MAC"; then
-      echo ">> Confirmed target ESP32-S31 on $dev! <<"
-      cd "$ROOT/firmware"
-      bash "$ROOT/scripts/vision_flash.sh" check "$dev"
-      VISION_FLASH_CONFIRM=yes bash "$ROOT/scripts/vision_flash.sh" update "$dev"
-      echo "=================================================================="
-      echo ">> FLASH SUCCESS: Stage 4b Vision firmware flashed to ESP32-S31 <<"
-      echo "=================================================================="
-      exit 0
+    echo "Found candidate serial port: $dev, running vision_flash.sh..."
+    cd "$ROOT/firmware"
+    # If a valid stamp already exists for this port within 30 min, go straight to update!
+    STAMP="/tmp/mosaico_vision_check_$(echo -n "$dev" | tr '/:' '__')"
+    if [[ -f "$STAMP" ]] && [[ $(( $(date +%s) - $(stat -f %m "$STAMP" 2>/dev/null || echo 0) )) -le 1800 ]]; then
+      if VISION_FLASH_CONFIRM=yes bash "$ROOT/scripts/vision_flash.sh" update "$dev"; then
+        echo "=================================================================="
+        echo ">> FLASH SUCCESS: Stage 4c Vision firmware flashed to ESP32-S31 <<"
+        echo "=================================================================="
+        exit 0
+      fi
     else
-      echo "Port $dev did not match target MAC $EXPECT_MAC (output: $(echo "$OUT" | tr '\n' ' ' | head -c 100))."
+      if bash "$ROOT/scripts/vision_flash.sh" check "$dev"; then
+        sleep 1
+        if [[ -e "$dev" ]] && VISION_FLASH_CONFIRM=yes bash "$ROOT/scripts/vision_flash.sh" update "$dev"; then
+          echo "=================================================================="
+          echo ">> FLASH SUCCESS: Stage 4c Vision firmware flashed to ESP32-S31 <<"
+          echo "=================================================================="
+          exit 0
+        else
+          echo ">> Check passed and stamp saved! If port closed after check, re-enter BOOT+RESET once more to flash immediately. <<"
+        fi
+      fi
     fi
   done
   sleep 1

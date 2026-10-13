@@ -26,7 +26,10 @@ else()
     set(ENV{EXP_VOICE} "0")
 endif()
 
-set(EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/components")
+set(ESP_IRIS_BUILD_PROFILE "usb" CACHE STRING "Iris dependency profile: USB CDC0 only, no TCP/lwIP/mDNS" FORCE)
+set(EXTRA_COMPONENT_DIRS
+    "${CMAKE_CURRENT_LIST_DIR}/components"
+    "${CMAKE_CURRENT_LIST_DIR}/../workspace/esp-mosaico-vibe/submodule/esp-mosaico-utils/ESP-Iris/components/esp_iris")
 set(SDKCONFIG_DEFAULTS "${CMAKE_CURRENT_LIST_DIR}/sdkconfig.defaults")
 if(EXP_VOICE OR EXP_VISION)
     set(SDKCONFIG "${CMAKE_BINARY_DIR}/sdkconfig")

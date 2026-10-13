@@ -380,3 +380,30 @@ bool dev_cam_copy_view(uint16_t *dst)
     xSemaphoreGive(s_view_lock);
     return ok;
 }
+
+bool dev_cam_copy_pip(uint16_t *fb480, int dst_x, int dst_y, int dst_w, int dst_h)
+{
+    if (!s_view_lock || !fb480 || dst_w <= 0 || dst_h <= 0) return false;
+    if (dst_x < 0 || dst_y < 0 || dst_x + dst_w > DEV_CAM_VIEW_W || dst_y + dst_h > DEV_CAM_VIEW_H) return false;
+    if (xSemaphoreTake(s_view_lock, pdMS_TO_TICKS(15)) != pdTRUE) return false;
+    const int p = s_pub;
+    bool ok = false;
+    if (p >= 0 && s_view[p]) {
+        if (esp_cache_msync(s_view[p], VIEW_BYTES, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_INVALIDATE) == ESP_OK) {
+            const uint16_t *src = s_view[p];
+            for (int y = 0; y < dst_h; ++y) {
+                const int sy = (y * DEV_CAM_VIEW_H) / dst_h;
+                const uint16_t *srow = src + sy * DEV_CAM_VIEW_W;
+                uint16_t *drow = fb480 + (dst_y + y) * DEV_CAM_VIEW_W + dst_x;
+                for (int x = 0; x < dst_w; ++x) {
+                    const int sx = (x * DEV_CAM_VIEW_W) / dst_w;
+                    drow[x] = srow[sx];
+                }
+            }
+            ok = true;
+        }
+    }
+    xSemaphoreGive(s_view_lock);
+    return ok;
+}
+

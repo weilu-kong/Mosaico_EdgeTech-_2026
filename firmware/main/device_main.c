@@ -37,6 +37,7 @@ static dev_voice_status_t s_voice;     /* snapshot of the speech engine, refresh
 #include "dev_face_detect.h"
 #endif
 #include "dev_sensors_core.h"
+#include "esp_iris.h"
 #include "exp_dbglog.h"
 #include "exp_gfx.h"
 #include "exp_text.h"
@@ -65,7 +66,7 @@ static const char *TAG = "exp_main";
 #endif
 #if EXP_VISION
 #define FW_VISION_TAG "-vision"
-#define FW_BASE_VERSION "0.9.2-stage4c"
+#define FW_BASE_VERSION "0.9.3-stage4c"
 #else
 #define FW_VISION_TAG ""
 #define FW_BASE_VERSION "0.8.1-stage3e"
@@ -732,13 +733,13 @@ static void draw_cam_view(void)
 
     if (face_res.found) {
         const dev_face_box_t b = face_res.box;
-        snprintf(l, sizeof(l), "face FOUND (%.0f%%)  infer %d.%d ms (%.1f fps)  box [%d,%d,%d,%d]",
+        snprintf(l, sizeof(l), "hand FOUND (%.0f%%)  infer %d.%d ms (%.1f fps)  box [%d,%d,%d,%d]",
                  (double)(face_res.score * 100.0f),
                  face_res.infer_us / 1000, (face_res.infer_us % 1000) / 100,
                  (double)face_res.fps, b.x, b.y, b.w, b.h);
         cam_text(l, 1, grn);
     } else {
-        snprintf(l, sizeof(l), "face NONE  infer %d.%d ms (%.1f fps)  runs %u",
+        snprintf(l, sizeof(l), "hand NONE  infer %d.%d ms (%.1f fps)  runs %u",
                  face_res.infer_us / 1000, (face_res.infer_us % 1000) / 100,
                  (double)face_res.fps, (unsigned)face_res.total_runs);
         cam_text(l, 1, yel);
@@ -764,7 +765,47 @@ static void draw_cam_view(void)
     cam_text(l, 4, wht);
 
     cam_text("tap: next orientation   top-right corner: leave", 5, wht);
-    cam_text("ESPDet Face Benchmark - measured values only", 6, wht);
+    cam_text("ESPDet Hand Benchmark - measured values only", 6, wht);
+}
+
+/* Draws a live Picture-in-Picture camera thumbnail with crosshair and hand tracking box when Camera input is active on the Game page. */
+static void draw_cam_pip(const exp_app_t *app)
+{
+    if (!exp_app_want_camera(app)) return;
+    const int phase = exp_app_debug_maze_phase(app);
+    /* Menu preview panel: (300, 56, 164, 160) -> inner (306, 62, 152, 148)
+     * Gameplay HUD PiP:   (360, 4, 52, 48)    -> inner (362, 6, 48, 44) right next to Exit button */
+    int px = 306, py = 62, pw = 152, ph = 148;
+    if (phase != 0) {
+        px = 362; py = 6; pw = 48; ph = 44;
+    }
+    if (!dev_cam_copy_pip(s_fb[s_cur], px, py, pw, ph)) return;
+
+    const Color cyn = {63, 208, 230, 200}, yel = {255, 255, 0, 255};
+    /* Subtle center crosshair showing neutral (240, 240) hand reference */
+    const int cx = px + pw / 2, cy = py + ph / 2;
+    exp_rect(cx - 5, cy, 11, 1, cyn);
+    exp_rect(cx, cy - 5, 1, 11, cyn);
+
+    dev_face_result_t res = {0};
+    dev_face_detect_get_result(&res);
+    if (res.found) {
+        const dev_face_box_t b = dev_face_box_clamp(res.box, 480, 480);
+        const int bx = px + (b.x * pw) / 480;
+        const int by = py + (b.y * ph) / 480;
+        int bw = (b.w * pw) / 480;
+        int bh = (b.h * ph) / 480;
+        if (bw < 6) bw = 6;
+        if (bh < 6) bh = 6;
+        if (bx + bw > px + pw) bw = px + pw - bx;
+        if (by + bh > py + ph) bh = py + ph - by;
+        if (bw > 2 && bh > 2) {
+            exp_rect(bx, by, bw, 2, yel);
+            exp_rect(bx, by + bh - 2, bw, 2, yel);
+            exp_rect(bx, by, 2, bh, yel);
+            exp_rect(bx + bw - 2, by, 2, bh, yel);
+        }
+    }
 }
 #endif
 
@@ -894,6 +935,8 @@ static void fill_sensors(exp_sensors_t *s)
 
 void app_main(void)
 {
+    (void)esp_iris_boot_probe();
+    (void)esp_iris_start();
 #if EXP_DBGLOG
     exp_dbglog_init();
 #endif
@@ -1115,9 +1158,15 @@ void app_main(void)
         BeginDrawing();
         if (MosaicoFastFrameAvailable()) {
 #if EXP_VISION
-            if (s_cam_view) draw_cam_view(); else
-#endif
+            if (s_cam_view) {
+                draw_cam_view();
+            } else {
+                exp_app_render(app);
+                draw_cam_pip(app);
+            }
+#else
             exp_app_render(app);
+#endif
 #if EXP_TIMING_OVERLAY
             ov_now = last_total;
             draw_timing_overlay(ov_now, ov_max, ov_draw, ov_present);

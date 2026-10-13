@@ -45,3 +45,6 @@ void dev_cam_set_orient(int preset);                       /* takes effect from 
 void dev_cam_take(dev_cam_status_t *out);
 /* Copies the newest picture (480x480, panel byte order) into dst; false if no frame has been published yet. */
 bool dev_cam_copy_view(uint16_t *dst);
+/* Downsamples the newest 480x480 picture into a dst_w x dst_h rectangle at (dst_x, dst_y) inside a 480x480 framebuffer. */
+bool dev_cam_copy_pip(uint16_t *fb480, int dst_x, int dst_y, int dst_w, int dst_h);
+
