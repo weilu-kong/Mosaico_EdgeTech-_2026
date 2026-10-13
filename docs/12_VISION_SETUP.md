@@ -1,22 +1,22 @@
-# 12 · 视觉（摄像头）——阶段 4a：预览与帧时间测量（0.9.0）——**全部未执行**
+# 12 · 视觉（摄像头与人脸检测）——阶段 4a & 4b：预览、帧时间与 ESPDet 推理基准——**设备已验证**
 
-> 状态：**已编码；主机单元测试通过（ASan/UBSan）；设备端 C 代码用"桩头文件"做过语法/类型检查（桩按真实 IDF `ppa.h` 与 BSP `mosaico_module_camera.h` 的定义写成）；RF 静态扫描通过。**
-> **没有用真实 ESP-IDF 编译或链接（云端没有 IDF），没有烧录，没有在板子上运行过，没有任何实测数字。** 下面所有"预期"都是推断，不是结果。
-> RF：本阶段不启用、不请求、不执行任何无线功能；只用摄像头（DVP）、PPA 和 PSRAM。新增依赖 `espressif/esp_video`（及其依赖 `esp_cam_sensor`、`esp_h264`、`esp_ipa`、`usb_host_uvc`）来自组件库，注册表页面的依赖列表里没有无线组件，但**必须在构建后用 `scripts/rf_map_check.py` 审计链接内容**。状态仍是 **RF Verification Pending**。
+> 状态：**阶段 4a（预览与帧时间测量）与阶段 4b（ESPDet/MSRMNP-s8 人脸检测基准与实时跟踪框）均已在 Mac 上通过真实 ESP-IDF 6.2 编译链接、RF 静态与链接图双重审计通过（PASS），并已烧录至 ESP32-S31 真机完成实测验证。**
+> RF：本阶段不启用、不请求、不执行任何无线功能；只用摄像头（DVP）、PPA、ESP-DL（CPU/SIMD）和 PSRAM。`scripts/rf_check.py` 与 `scripts/rf_map_check.py` 审计结果均为 **PASS**（0 违规符号）。项目整体合规状态仍保持 **RF Verification Pending**（待硬件频谱实测）。
 
 ## 0. 回退点
 
-`git tag stable-stage3e-0.8.1`（commit `4a3d044`）是阶段 3e 的稳定版本。视觉开发在分支 `feature/vision`。回到语音固件：烧录 `build_voice` 的 app（`scripts/voice_flash.sh update`），**分区表不变**，见 §3。
+`git tag stable-stage3e-0.8.1`（commit `4a3d044`）是阶段 3e 的稳定版本。视觉开发在分支 `feature/vision`。回到语音固件：烧录 `build_voice` 的 app（`scripts/voice_flash.sh update`），**分区表完全不变**，见 §3。
 
 ## 1. 做了什么 / 没做什么
 
 | | 说明 |
 |---|---|
-| 做了 | 独立构建 `-DEXP_VISION=1`（目录 `build_vision`）：一个**开发用"摄像头测试视图"**。三连点屏幕**底部中央**（2 秒内，x 150–330、y ≥ 400）打开；点**右上角**（x ≥ 390、y < 90）退出；其它位置每点一次切换一种旋转/镜像预设（共 8 种，第 1 种 = 官方示例的设置）。前两下点击仍会传到应用（和日志视图的角落手势同样的限制）。|
-| 流水线 | 官方 BSP `mosaico_module_camera`（左槽，OV3640 / SC101IOT，DVP）→ 帧（默认 OV3640 UYVY 1024×768）→ **PPA**：取中心正方形 768×768、旋转/镜像、缩放到 480×480 RGB565 → CPU 32 位字交换字节（面板要大端）→ 发布给主线程 → 主线程拷到帧缓冲后叠加测量数字。照官方示例 `camera_lcd_preview`，增加了字节交换和计时。|
-| 屏幕上的数字 | 相机状态/错误原因、传感器分辨率与 fourcc、裁剪边长、缩放系数是否为 1/16 的整数倍、打开耗时、**fps、帧数、采集错误数、重启数、各阶段平均耗时（等传感器 / PPA / 字节交换 / 一圈）**、方向预设、PSRAM 剩余。全部由板上 `esp_timer` 测得；没有任何估计值。|
-| 保护 | 打开前用槽管理器读到的左槽信息过一道闸（`dev_camera_gate.h`，主机测试）：只放行**已识别的相机模块**；左槽有"在位但描述符读不出"的板子（官方说出厂相机板的 EEPROM 可能没写）才以"调试例外"打开并在日志里警告；**别的已识别模块（摇杆等）、有有效描述符但不是相机的未知板子、空槽、尚未探测——一律拒绝并在屏幕上写出原因。**|
-| 不做 | 不开机自动启动相机；不识别人脸；不存图、不传输图像；不接入正式界面页面；不碰语音；不改分区表、不动模型分区、不动 bootloader。|
+| 做了（4a） | 独立构建 `-DEXP_VISION=1`（目录 `build_vision`）：开发用“摄像头测试视图”。三连点屏幕**底部中央**（2 秒内，x 150–330、y ≥ 400）打开；点**右上角**（x ≥ 390、y < 90）退出；其它位置每点一次切换一种旋转/镜像预设（共 8 种，第 1 种 = 官方示例的设置）。|
+| 做了（4b） | 集成 `espressif/human_face_detect`（`^0.5.1`，MSRMNP-s8 V1）与 `espressif/esp-dl`（`^3.3.13`），模型权重内嵌于 Flash `.rodata`（无需改动分区表，完整保留 `0x510000` 处的离线语音模型）。在 Core 1（优先级 2，低于相机采集任务的优先级 4）运行异步人脸检测工作线程，非阻塞消费 480×480 RGB565BE 帧；主线程在画面上实时绘制 2px 黄色人脸跟踪框，并在 HUD 叠加实测推理耗时（`infer ms`）、推理吞吐帧率（`fps`）、置信度与边界框坐标 `[x,y,w,h]`。|
+| 流水线 | 官方 BSP `mosaico_module_camera`（左槽，SC101IOT，DVP）→ UYVY 1280×720 帧 → **PPA**：取中心正方形 720×720、旋转/镜像、缩放到 480×480 RGB565 → CPU 32 位字交换字节（面板要大端）→ 发布给主线程并异步投递给 Core 1 人脸检测线程 → 主线程绘制画面、黄色人脸框与实测 HUD 指标。|
+| 屏幕上的数字 | 相机状态、**人脸检测状态（FOUND/NONE、置信度%、单次推理耗时 ms、推理 fps、框坐标 [x,y,w,h]）**、传感器分辨率与 fourcc、裁剪边长、缩放模式、打开耗时、**相机预览 fps、各阶段平均耗时（wait / ppa / swap / loop）**、方向预设、PSRAM 剩余。全部由板上 `esp_timer` 实测。|
+| 保护 | 打开前用槽管理器读到的左槽信息过一道闸（`dev_camera_gate.h`，主机测试）＋坐标越界安全裁剪（`dev_face_core.h`，主机 ASan/UBSan 测试通过）。|
+| 不做 | 不开机自动启动相机；不保存或外传人脸图像；不碰语音分区；不改分区表、不动 bootloader。|
 
 ## 2. 必须知道的硬件事实（来自 BSP 源码与官方示例）
 
@@ -73,11 +73,19 @@ VISION_FLASH_CONFIRM=yes bash ../scripts/vision_flash.sh update /dev/cu.usbmodem
 * **内存占用**：`psram free 8399 KB`（剩余约 8.2 MB PSRAM，内存极充裕）
 * **显示方向**：预设 `1/8: rot 270 mirror x0 y1`，正对人脸正常显示
 
+### 4b 实测硬件数据记录：ESPDet 人脸检测基准（2026-10-13）
 
-## 5. 已知限制
+* **模型与组件版本**：`espressif/human_face_detect` (`^0.5.1`, MSRMNP-s8 V1) + `espressif/esp-dl` (`^3.3.13`)
+* **模型存储与镜像体积**：内嵌于 Flash `.rodata`（`CONFIG_HUMAN_FACE_DETECT_MODEL_IN_FLASH_RODATA=y`），App 二进制体积 `0x3cbdf0`（3,980,784 字节 ≈ 3.80 MB），在 5.0 MB `factory` 分区中剩余约 1.2 MB（24%）空间；**零分区表改动**，语音模型分区 `0x510000` 完好无损。
+* **ESP32-S31 纯推理耗时**：**`infer 46.6 ms`**（推理吞吐率 **`21.4 fps`**）
+* **检测准确度与跟踪框**：正面人脸实测命中 `face FOUND (87%)`，实时绘制 2px 黄色边界框 `box [90,62,261,344]`，框体精准贴合面部。
+* **预览流水线并发表现**：**`cam 15.7 fps`**（`wait 30.4 ms`, `ppa 13.0 ms`, `swap 8.5 ms`, `loop 62.3 ms`, `open 350 ms`）——Core 1 异步低优先级推理对主预览帧率（15.6→15.7 fps）**零拖慢**！
+* **运行时内存占用**：相机预览 + 人脸检测模型同时激活时，**`psram free 4660 KB`**（仍剩余约 4.55 MB PSRAM）。
+* **UI 主线程渲染耗时**：`now 29.1 max 43.0 d 34.1 wait 0.3 ms`（`present sem 0.3 call 8.4 xfer 23.5 ms`）。
 
-* 云端没有 IDF，所有设备端代码只做过桩头文件检查。首次真机编译可能出现链接/组件依赖问题（尤其是 `esp_video` 的 Kconfig 与 SC101IOT 默认格式未在 `sdkconfig.defaults.vision` 里指定）。
-* 相机在板子上的安装方向没有文档，所以用 8 种预设现场确定。
+
+## 5. 已知限制与下一步（4c）
+
 * 三连点手势的前两下会传到应用（底部中央若有按钮会被按下）。
-* 相机与语音不能同时构建（`EXP_VOICE` 与 `EXP_VISION` 互斥，4c 阶段再决定分区与并发）。
-* 人脸检测（4b）尚未开始：它需要 `human_face_detect` 与 esp-dl（官方 `ai_model_gallery` 把模型放在 flash rodata 里，不需要单独模型分区；是否仍需要分区取决于 4b 的 app 大小，到时再征求同意）。S31 上的推理速度完全未知。
+* 相机与语音目前为独立构建（`EXP_VOICE` 与 `EXP_VISION` 互斥），4c 阶段将接入正式交互玩法（如头部姿态控制迷宫、手势导航）并规划分区与模式共存方案。
+
