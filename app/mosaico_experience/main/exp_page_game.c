@@ -23,9 +23,10 @@ int page_game_layout(const exp_app_t *app, exp_btn_t *out)
         for (int i = 0; i < 3; ++i) {
             out[n++] = (exp_btn_t){BTN_DIFF_0 + i, {16 + i * 151, 244, 146, 44}, true, app->sel_diff == i, UI_BTN_SEGMENT};
         }
-        out[n++] = (exp_btn_t){BTN_IN_TILT, {16, 314, 140, 44}, app->imu_ok, page_game_input(app) == INPUT_TILT, UI_BTN_CHIP};
-        out[n++] = (exp_btn_t){BTN_IN_JOY, {164, 314, 190, 44}, app_joystick_present(app), page_game_input(app) == INPUT_JOY, UI_BTN_CHIP};
-        out[n++] = (exp_btn_t){BTN_IN_TOUCH, {362, 314, 102, 44}, true, page_game_input(app) == INPUT_TOUCH, UI_BTN_CHIP};
+        out[n++] = (exp_btn_t){BTN_IN_TILT, {16, 314, 78, 44}, app->imu_ok, page_game_input(app) == INPUT_TILT, UI_BTN_CHIP};
+        out[n++] = (exp_btn_t){BTN_IN_JOY, {100, 314, 174, 44}, app_joystick_present(app), page_game_input(app) == INPUT_JOY, UI_BTN_CHIP};
+        out[n++] = (exp_btn_t){BTN_IN_FACE, {280, 314, 88, 44}, app_camera_present(app), page_game_input(app) == INPUT_FACE, UI_BTN_CHIP};
+        out[n++] = (exp_btn_t){BTN_IN_TOUCH, {374, 314, 90, 44}, true, page_game_input(app) == INPUT_TOUCH, UI_BTN_CHIP};
         out[n++] = (exp_btn_t){BTN_START, {16, 364, 448, 44}, true, false, UI_BTN_PRIMARY};
     } else {
         out[n++] = (exp_btn_t){BTN_EXIT_GAME, {HUD_EXIT_X, 4, 52, 48}, true, false, UI_BTN_SECONDARY};
@@ -46,10 +47,11 @@ static void game_to_menu(exp_app_t *app)
 }
 
 /* The selected input falls back when its hardware is missing, never silently
- * stays on a dead source: tilt -> touch when the IMU is down, joystick -> tilt/touch. */
+ * stays on a dead source: tilt -> touch when the IMU is down, joystick/camera -> tilt/touch. */
 game_input_t page_game_input(const exp_app_t *app)
 {
     game_input_t m = app->maze.phase == MZ_MENU ? app->input_mode : app->play_input;
+    if (m == INPUT_FACE && !app_camera_present(app)) m = app->imu_ok ? INPUT_TILT : INPUT_TOUCH;
     if (m == INPUT_JOY && !app_joystick_present(app)) m = app->imu_ok ? INPUT_TILT : INPUT_TOUCH;
     if (m == INPUT_TILT && !app->imu_ok) m = INPUT_TOUCH;
     return m;
@@ -82,6 +84,7 @@ void page_game_button(exp_app_t *app, int id)
         break;
     case BTN_IN_TILT: app->input_mode = INPUT_TILT; app_sound(app, EXP_SND_TAP); break;
     case BTN_IN_JOY: app->input_mode = INPUT_JOY; app_sound(app, EXP_SND_TAP); break;
+    case BTN_IN_FACE: app->input_mode = INPUT_FACE; app_sound(app, EXP_SND_TAP); break;
     case BTN_IN_TOUCH: app->input_mode = INPUT_TOUCH; app_sound(app, EXP_SND_TAP); break;
     case BTN_START:
         app->play_input = page_game_input(app);
@@ -106,7 +109,7 @@ void page_game_button(exp_app_t *app, int id)
 
 void page_game_pointer(exp_app_t *app, int x, int y, bool down)
 {
-    if (app->maze.phase != MZ_PLAYING || app->play_input != INPUT_TOUCH || app->maze.demo) return;
+    if (app->maze.phase != MZ_PLAYING || page_game_input(app) != INPUT_TOUCH || app->maze.demo) return;
     if (!down) { app->touch_ax = app->touch_ay = 0.0f; return; }
     const exp_maze_t *m = &app->maze;
     const float ox = (float)((EXP_W - m->n * m->cell) / 2), oy = (float)(PF_Y + (PF_SIZE - m->n * m->cell) / 2);
@@ -120,18 +123,21 @@ void page_game_update(exp_app_t *app, float dt)
 {
     exp_maze_t *m = &app->maze;
     if (m->phase == MZ_MENU) return;
+    const game_input_t active_in = page_game_input(app);
     float ax = 0.0f, ay = 0.0f;
     if (m->demo) {
         exp_maze_bot(m, &ax, &ay);
-    } else if (app->play_input == INPUT_TILT && app->imu_ok) {
+    } else if (active_in == INPUT_TILT && app->imu_ok) {
         ax = -app->s.acc[0];
         ay = app->s.acc[1];
         if (fabsf(ax) < 0.03f) ax = 0.0f;
         if (fabsf(ay) < 0.03f) ay = 0.0f;
-    } else if (app->play_input == INPUT_JOY && (app->s.flags & EXP_SENS_JOY)) {
+    } else if (active_in == INPUT_JOY && (app->s.flags & EXP_SENS_JOY)) {
         ax = app->s.joy[0] * 0.6f;
         ay = -app->s.joy[1] * 0.6f;
-    } else if (app->play_input == INPUT_TOUCH) {
+    } else if (active_in == INPUT_FACE && (app->s.flags & EXP_SENS_FACE) && app->s.face_found) {
+        exp_face_box_to_tilt(app->s.face_x, app->s.face_y, app->s.face_w, app->s.face_h, &ax, &ay);
+    } else if (active_in == INPUT_TOUCH) {
         ax = app->touch_ax;
         ay = app->touch_ay;
     }
@@ -209,7 +215,19 @@ static void draw_menu(exp_app_t *app)
 
     exp_text(T_DIFF, 16, 224, EXP_FONT_CAP, C_TEXT2, EXP_ALIGN_LEFT);
     exp_text(T_INPUT, 16, 292, EXP_FONT_CAP, C_TEXT2, EXP_ALIGN_LEFT);
-    if (!app->imu_ok) {
+    if (page_game_input(app) == INPUT_FACE) {
+        char nb[64];
+        if ((app->s.flags & EXP_SENS_FACE) && app->s.face_found) {
+            snprintf(nb, sizeof(nb), "%s: %s %u%%", T_MOD_CAMERA, T_STATUS_OK, (unsigned)app->s.face_conf_pct);
+            exp_text(nb, 464, 292, EXP_FONT_CAP, C_OK, EXP_ALIGN_RIGHT);
+        } else if (app->s.flags & EXP_SENS_FACE) {
+            snprintf(nb, sizeof(nb), "%s: %s", T_MOD_CAMERA, T_NO_MAG);
+            exp_text(nb, 464, 292, EXP_FONT_CAP, C_WARN, EXP_ALIGN_RIGHT);
+        } else {
+            snprintf(nb, sizeof(nb), "%s: %s", T_MOD_CAMERA, T_STATUS_WAIT);
+            exp_text(nb, 464, 292, EXP_FONT_CAP, C_WARN, EXP_ALIGN_RIGHT);
+        }
+    } else if (!app->imu_ok) {
         char nb[64];
         snprintf(nb, sizeof(nb), "%s: %s", T_INPUT_TILT, T_TILT_NA);
         exp_text(nb, 464, 292, EXP_FONT_CAP, C_WARN, EXP_ALIGN_RIGHT);
@@ -220,7 +238,7 @@ static void draw_menu(exp_app_t *app)
     }
     exp_btn_t btns[EXP_MAX_BTN];
     const int n = page_game_layout(app, btns);
-    static const char *const names[] = {T_DIFF_EASY, T_DIFF_NORMAL, T_DIFF_HARD, T_INPUT_TILT, T_INPUT_JOY, T_INPUT_TOUCH, T_START};
+    static const char *const names[] = {T_DIFF_EASY, T_DIFF_NORMAL, T_DIFF_HARD, T_INPUT_TILT, T_INPUT_JOY, T_MOD_CAMERA, T_INPUT_TOUCH, T_START};
     for (int i = 0; i < n; ++i) {
         const bool pressed = app->ptr_down && app->press_id == btns[i].id && btns[i].enabled;
         ui_draw_button(&btns[i], names[i], pressed, EXP_ICON_PLAY, btns[i].id == BTN_START);
@@ -262,6 +280,14 @@ static void draw_play(exp_app_t *app)
     /* Play field */
     exp_panel(ox - 6, oy - 6, n * cell + 12, n * cell + 12, 12, EXP_RGB(8, 16, 30), C_BORDER);
     draw_maze(app, ox, oy, cell, false);
+    if (!m->demo && page_game_input(app) == INPUT_FACE && (app->s.flags & EXP_SENS_FACE) && app->s.face_found) {
+        const float fcx = (float)(app->s.face_x + app->s.face_w / 2);
+        const float fcy = (float)(app->s.face_y + app->s.face_h / 2);
+        const float tx = exp_clampf(fcx, (float)(ox + 10), (float)(ox + n * cell - 10));
+        const float ty = exp_clampf(fcy, (float)(oy + 10), (float)(oy + n * cell - 10));
+        exp_ring(tx, ty, 10.0f, 8.0f, exp_with_alpha(C_CYAN, 0.75f));
+        exp_disc(tx, ty, 3.0f, exp_with_alpha(C_CYAN, 0.85f));
+    }
     /* Ball */
     const float bx = (float)ox + m->bx, by = (float)oy + m->by;
     exp_disc(bx + 2.0f, by + 3.0f, m->radius + 1.0f, EXP_RGBA(0, 0, 0, 110));

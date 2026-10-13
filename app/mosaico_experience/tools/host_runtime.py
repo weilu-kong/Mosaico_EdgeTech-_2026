@@ -100,6 +100,7 @@ class Sim:
         api.exp_sim_set_joystick.argtypes = [f32, f32]
         api.exp_sim_set_heap_demo.argtypes = [ctypes.c_int]
         api.exp_sim_set_joy_calibrating.argtypes = [ctypes.c_int]
+        api.exp_sim_set_face.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
         api.exp_sim_set_mag_disturb.argtypes = [ctypes.c_int]
         api.exp_sim_set_voice_state.argtypes = [ctypes.c_int]
         api.exp_sim_voice_event.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
@@ -147,6 +148,8 @@ class Sim:
     def imu_fault(self, on=True) -> None: self.api.exp_sim_set_imu_fault(1 if on else 0)
     def mag_present(self, on=True) -> None: self.api.exp_sim_set_mag_present(1 if on else 0)
     def joystick(self, x=0.0, y=0.0) -> None: self.api.exp_sim_set_joystick(x, y)
+    def face(self, found=1, x=140, y=140, w=200, h=200, conf=87, infer_ms=47) -> None:
+        self.api.exp_sim_set_face(int(found), int(x), int(y), int(w), int(h), int(conf), int(infer_ms))
     def voice_state(self, ai_state: int) -> None: self.api.exp_sim_set_voice_state(ai_state)   # 0 not integrated, 1 loading, 2 ready, 3 error
     def voice_wake(self, wake_idx=1) -> None: self.api.exp_sim_voice_event(1, 0, 0, wake_idx)
     def voice_command(self, cmd: int, prob=90) -> None: self.api.exp_sim_voice_event(2, cmd, prob, 0)   # cmd: 1 home 2 motion 3 audio 4 game 5 device

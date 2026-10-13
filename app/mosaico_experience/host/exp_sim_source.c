@@ -26,6 +26,8 @@ typedef struct {
     float joy[2];
     bool joy_cal;
     bool mag_disturb;
+    int face_state;               /* -1 starting, 0 none, 1 found (default 1 when camera in left slot) */
+    int face_x, face_y, face_w, face_h, face_conf, face_ms;
     int ai;                       /* exp_ai_state_t */
     bool voice_listening;
     int voice_event, voice_cmd, voice_prob, voice_wake;
@@ -61,6 +63,13 @@ static void defaults(void)
     g.batt_present = true;
     g.batt = 82;
     g.mag_present = true;
+    g.face_state = 1;
+    g.face_x = 140;
+    g.face_y = 140;
+    g.face_w = 200;
+    g.face_h = 200;
+    g.face_conf = 87;
+    g.face_ms = 47;
 }
 
 void exp_sim_attach(exp_app_t *app)
@@ -242,6 +251,16 @@ void exp_sim_tick(float dt)
             s->joy[1] = g.joy[1];
         }
     }
+    if (g.left == EXP_MOD_CAMERA && exp_app_want_camera(g.app) && g.face_state >= 0) {
+        s->flags |= EXP_SENS_FACE;
+        s->face_found = g.face_state > 0;
+        s->face_x = (int16_t)g.face_x;
+        s->face_y = (int16_t)g.face_y;
+        s->face_w = (int16_t)g.face_w;
+        s->face_h = (int16_t)g.face_h;
+        s->face_conf_pct = (uint8_t)g.face_conf;
+        s->face_infer_ms = (uint16_t)g.face_ms;
+    }
     if (g.heap_demo) {
         s->heap_internal_total = 512U * 1024U; s->heap_internal_free = 301U * 1024U;
         s->heap_psram_total = 16U * 1024U * 1024U; s->heap_psram_free = 12U * 1024U * 1024U + 400U * 1024U;
@@ -278,6 +297,16 @@ void exp_sim_set_mag_present(int p) { g.mag_present = p != 0; }
 void exp_sim_set_joystick(float x, float y) { g.joy[0] = x; g.joy[1] = y; }
 void exp_sim_set_mag_disturb(int on) { g.mag_disturb = on != 0; }
 void exp_sim_set_joy_calibrating(int on) { g.joy_cal = on != 0; }
+void exp_sim_set_face(int found, int x, int y, int w, int h, int conf_pct, int infer_ms)
+{
+    g.face_state = found;
+    g.face_x = x;
+    g.face_y = y;
+    g.face_w = w;
+    g.face_h = h;
+    g.face_conf = conf_pct < 0 ? 0 : (conf_pct > 100 ? 100 : conf_pct);
+    g.face_ms = infer_ms < 0 ? 0 : infer_ms;
+}
 void exp_sim_set_voice_state(int ai_state)
 {
     g.ai = ai_state < 0 ? 0 : (ai_state > (int)EXP_AI_ERROR ? (int)EXP_AI_ERROR : ai_state);

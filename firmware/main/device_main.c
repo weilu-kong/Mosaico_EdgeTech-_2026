@@ -65,7 +65,7 @@ static const char *TAG = "exp_main";
 #endif
 #if EXP_VISION
 #define FW_VISION_TAG "-vision"
-#define FW_BASE_VERSION "0.9.0-stage4a"
+#define FW_BASE_VERSION "0.9.2-stage4c"
 #else
 #define FW_VISION_TAG ""
 #define FW_BASE_VERSION "0.8.1-stage3e"
@@ -618,49 +618,62 @@ static bool log_view_tap(int x, int y)
 #endif
 
 #if EXP_VISION
-#if !EXP_DBGLOG
-#error "the camera test view (stage 4a) is a development aid: build it with EXP_DBGLOG=1"
-#endif
-/* ---- Camera test view (stage 4a, development only) ------------------------------------------------------------------
- * Not part of the exhibition UI. Triple-tap the bottom centre of any screen (within 2 s) to open it; tap the top-right corner
- * to leave; any other tap cycles the eight rotation / mirror presets (the camera's mounting is not documented, so it is
- * settled by looking at the picture). Opening it starts the BSP camera on the LEFT slot and, by hardware design, takes the
- * USB Serial/JTAG pad (camera D2): leaving the view releases it. Every number on the panel is measured on this board. */
+/* ---- Camera & Face Tracking (stage 4a/4b/4c) ------------------------------------------------------------------------
+ * Opened on-demand when either:
+ *   1. The visitor selects Camera (INPUT_FACE) on the Game page (exp_app_want_camera(app) == true), or
+ *   2. The developer opens the camera test view (triple-tap bottom centre when EXP_DBGLOG=1).
+ * Leaving the Game page / switching input / closing the test view stops the stream and releases the USB Serial/JTAG pad. */
 static bool s_cam_view;
+static bool s_cam_active;
 static int s_cam_orient;
 static const char *s_cam_refusal;          /* non-NULL: the slot check refused to start the camera (text shown on the panel) */
 
+static void cam_sync(bool want)
+{
+    if (want && !s_cam_active) {
+        dev_slots_take(&s_slots);
+        const dev_cam_gate_t g = dev_cam_gate(s_slots.cls[0], s_slots.descriptor_valid[0]);
+        s_cam_refusal = g.allow ? NULL : g.reason;
+        if (g.allow) {
+            if (g.allow_unidentified) ESP_LOGW(TAG, "camera start: %s", g.reason);
+            else ESP_LOGI(TAG, "camera start: %s", g.reason);
+            DBG_STAGE("camera");
+            dev_cam_set_orient(s_cam_orient);
+            dev_cam_request(true, g.allow_unidentified);
+            dev_face_detect_start();
+            s_cam_active = true;
+        } else {
+            ESP_LOGW(TAG, "camera refused: %s", g.reason);
+        }
+    } else if (!want && s_cam_active) {
+        dev_face_detect_stop();
+        dev_cam_request(false, false);
+        s_cam_active = false;
+        s_cam_refusal = NULL;
+        DBG_STAGE("loop");
+        ESP_LOGI(TAG, "camera stopped");
+    }
+}
+
 static void cam_view_open(void)
 {
-    dev_slots_take(&s_slots);
-    const dev_cam_gate_t g = dev_cam_gate(s_slots.cls[0], s_slots.descriptor_valid[0]);
     s_cam_view = true;
-    s_cam_refusal = g.allow ? NULL : g.reason;
-    if (g.allow) {
-        if (g.allow_unidentified) ESP_LOGW(TAG, "camera view: %s", g.reason);
-        else ESP_LOGI(TAG, "camera view: %s", g.reason);
-        DBG_STAGE("camera");
-        dev_cam_set_orient(s_cam_orient);
-        dev_cam_request(true, g.allow_unidentified);
-        dev_face_detect_start();
-    } else {
-        ESP_LOGW(TAG, "camera view refused: %s", g.reason);
-    }
+    cam_sync(true);
 }
 
 static void cam_view_close(void)
 {
-    dev_face_detect_stop();
-    dev_cam_request(false, false);
     s_cam_view = false;
-    s_cam_refusal = NULL;
-    DBG_STAGE("loop");
-    ESP_LOGI(TAG, "camera view closed");
+    cam_sync(false);
 }
 
 /* Called on every new touch-down. Returns true when the tap belongs to the camera view and must not reach the app. */
 static bool cam_view_tap(int x, int y)
 {
+#if !EXP_DBGLOG
+    (void)x; (void)y;
+    return false;
+#else
     if (s_cam_view) {
         if (x >= 390 && y < 90) { cam_view_close(); return true; }
         s_cam_orient = dev_cam_orient_next(s_cam_orient);
@@ -676,6 +689,7 @@ static bool cam_view_tap(int x, int y)
         if (++taps >= 3) { taps = 0; cam_view_open(); return true; }
     }
     return false;
+#endif
 }
 
 static void cam_text(const char *t, int line, Color c)
@@ -837,6 +851,28 @@ static void fill_sensors(exp_sensors_t *s)
     dev_slots_take(&s_slots);
     s->slot_left = slot_to_module(s_slots.cls[0]);
     s->slot_right = slot_to_module(s_slots.cls[1]);
+#if EXP_VISION
+    {
+        dev_cam_status_t cam_st = {0};
+        dev_cam_take(&cam_st);
+        const dev_cam_gate_t cg = dev_cam_gate(s_slots.cls[0], s_slots.descriptor_valid[0]);
+        if (cg.allow && cam_st.phase != DEV_CAM_ERROR) s->slot_left = EXP_MOD_CAMERA;
+        if (cam_st.phase == DEV_CAM_RUNNING) {
+            dev_face_result_t face_res = {0};
+            dev_face_detect_get_result(&face_res);
+            if (face_res.total_runs > 0) {
+                s->flags |= EXP_SENS_FACE;
+                s->face_found = face_res.found;
+                s->face_x = (int16_t)face_res.box.x;
+                s->face_y = (int16_t)face_res.box.y;
+                s->face_w = (int16_t)face_res.box.w;
+                s->face_h = (int16_t)face_res.box.h;
+                s->face_conf_pct = (uint8_t)(face_res.score * 100.0f + 0.5f);
+                s->face_infer_ms = (uint16_t)((face_res.infer_us + 500) / 1000);
+            }
+        }
+    }
+#endif
 #if EXP_USE_JOYSTICK
     dev_joystick_take(&s_joy);
     if (s_joy.ready) {
@@ -1022,6 +1058,9 @@ void app_main(void)
         time_debt_s -= (float)steps * (TICK_MS / 1000.0f);
         if (time_debt_s < 0.0f) time_debt_s = 0.0f;
         for (int i = 0; i < steps; ++i) exp_app_update(app, TICK_MS / 1000.0f);
+#if EXP_VISION
+        cam_sync(s_cam_view || exp_app_want_camera(app));
+#endif
 #if EXP_USE_MAG && EXP_USE_SENSORS
         {
             /* calibration result / rejection is evidence for the compass work: serial log + log view */

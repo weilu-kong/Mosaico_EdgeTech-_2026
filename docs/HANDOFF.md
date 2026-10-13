@@ -71,6 +71,7 @@ evidence/                      主机测试日志、22 屏截图、布局报告�
 | 日语离线语音（ESP-SR：AFE+WakeNet+MultiNet7，日语指令用音译英文登记；命令 ホーム/モーション/オーディオ/ゲーム/デバイス） | 已编码、已编译、已烧录(0.8.x)；**识别率/误唤醒率未测量**。0.8.0 曾因同时加载两个唤醒词在 `voice_fetch` 断言 PANIC（B43，推断原因），0.8.1 改为一次只加载一个(默认日语 `wn9l_ja_konnichihaesp_tts3`)，板上效果需用户反馈 |
 | 4a 相机预览+帧时间测量（`feature/vision`） | **设备已验证（2026-10-11）**：ESP-IDF 编译通过、已烧录；传感器 SC101IOT(1280x720 UYVY)，预览 15.6 fps(耗时 63.9 ms，DMA 等待 39.7 ms，PPA 变换 12.8 ms，字节对调 11.2 ms)，PSRAM 剩余 8399 KB，预设 1/8(rot 270 mirror x0 y1) 方向正向 |
 | 4b ESPDet 人脸检测基准与实时跟踪框（`feature/vision`） | **设备已验证（2026-10-13）**：`human_face_detect` (`^0.5.1`, MSRMNP-s8 V1) + `esp-dl` (`^3.3.13`) 内嵌 Flash `.rodata`（镜像 3.80 MB，零分区表改动）；ESP32-S31 纯推理耗时 **`46.6 ms`**（**`21.4 fps`**），正面人脸命中 `face FOUND (87%)`，实时黄色跟踪框 `box [90,62,261,344]`；相机预览保持 **`15.7 fps`**（零拖慢），PSRAM 剩余 **`4660 KB`** |
+| 4c Tilt Maze「カメラ」面部跟踪控制与按需相机启停（`feature/vision`） | **已编码、已编译、模拟器已验证（`0.9.2-stage4c`）**：游戏页新增第 4 输入按钮 `カメラ`（`BTN_IN_FACE`），通过 `dev_face_box_to_tilt` 将人脸中心偏移映射为迷宫倾斜加速度 `[-0.6, +0.6]` 并绘制青色准星；相机仅在 Game 页选中 `カメラ` 或打开测试视图时按需启动，离开即释放并恢复 GPIO33；全套 Host 回归（20 项测试 + 33 张截图）与 `rf_map_check.py` 审计 PASS，待真机烧录实测 |
 
 | RF 实测、日本法规、8 小时稳定性、展台镜像验收 | **未开始** |
 
@@ -87,7 +88,7 @@ export MOSAICO_ENGINE_ROOT=<…>/esp-mosaico-vibe/submodule/raylib-lite-engine  
 . ~/esp/esp-idf-mosaico-7b9cc1a/export.sh && cd firmware
 idf.py build                                         # 普通
 idf.py -B build_voice  -DEXP_VOICE=1  build          # 语音
-idf.py -B build_vision -DEXP_VISION=1 build          # 视觉（feature/vision；与 EXP_VOICE 互斥）
+idf.py -B build_vision -DEXP_VISION=1 build          # 视觉（feature/vision）
 python3 ../scripts/rf_map_check.py <build>/mosaico_experience.map <build>/sdkconfig   # 每次构建后必做
 # 改过 sdkconfig.defaults* 后先删 <build>/sdkconfig
 ```
@@ -104,16 +105,16 @@ python3 ../scripts/rf_map_check.py <build>/mosaico_experience.map <build>/sdkcon
 
 * **4a（设备已验证，2026-10-11）**：BSP `mosaico_module_camera`(左槽,DVP, SC101IOT 1280×720 UYVY) → PPA 裁剪/旋转/缩放 → 480×480 RGB565 → 屏幕叠加实测 15.6 fps / 63.9 ms / PSRAM 8399 KB。预设 1/8 方向正向。
 * **4b（设备已验证，2026-10-13）**：实测 `espressif/human_face_detect` (MSRMNP-s8 V1) 在 ESP32-S31 上的速度为 **`46.6 ms / 21.4 fps`**。模型内嵌于 Flash `.rodata`（App 体积 3.80 MB，5 MB factory 分区余 24%），Core 1 异步推理对 15.7 fps 预览流零阻塞，PSRAM 剩余 4660 KB。
-* **4c（下一步）**：基于 4b 实测的 21.4 fps 人脸框坐标，实现头部位置控制倾斜迷宫（Head-tracked Tilt Maze）与视觉交互页面接入，要求：模拟器支持、测试、文档、RF 审计、板上验证；并决定与语音的组合方案。
+* **4c（已编码、已编译、模拟器已验证，2026-10-13）**：基于 4b 实测的 21.4 fps 人脸框坐标，实现 Tilt Maze「カメラ」头部位置控制迷宫（`INPUT_FACE`、青色准星、按需启停相机与恢复 GPIO33），通过全套模拟器回归与 ESP-IDF 编译及 RF 审计（`0.9.2-stage4c`）。
 * 硬件陷阱：相机 D2 = GPIO33 = USB Serial/JTAG D−，相机打开期间 USB 口不可用，控制台必须是 UART；相机只能插左槽；传感器确认为 SC101IOT 1280×720@25 UYVY。
 
 ## 9. 已知问题速览（完整见 `docs/10`）
 
-B19 板上 Recovery 已擦除 · B21 运行时无串口 · B32 BQ27220 配置被官方驱动改写(已改只读) · B38 罗盘偏差 · B39 3c 未上板 · B40 3d 未上板 · B41/B42 日语语音是"音译英语"+未测识别率 · B43 双唤醒词 PANIC · B44 4a 设备已验证 · B45 4b 人脸检测基准设备已验证(46.6 ms / 21.4 fps)。
+B19 板上 Recovery 已擦除 · B21 运行时无串口 · B32 BQ27220 配置被官方驱动改写(已改只读) · B38 罗盘偏差 · B39 3c 未上板 · B40 3d 未上板 · B41/B42 日语语音是"音译英语"+未测识别率 · B43 双唤醒词 PANIC · B44 4a 设备已验证 · B45 4b 人脸检测基准设备已验证(46.6 ms / 21.4 fps) · B46 4c 面部跟踪迷宫控制已编译与模拟器验证，待上板。
 
 ## 10. 立即要做的事（按顺序）
 
-1. **推进阶段 4c**：利用阶段 4b 实测高达 21.4 fps（46.6 ms）的人脸边界框中心坐标，设计并实现头部跟踪控制迷宫与视觉交互体验页面（含 Host 模拟器支持与单元测试）。
-2. 评估视觉与离线语音的共存/切换方案（当前 5 MB `factory` App 含人脸模型共 3.80 MB，剩余 1.2 MB 足以同时容纳 `exp_voice` 代码并直接读取 `0x510000` 处的 4 MB `model` 语音分区，有望在不改分区表的前提下实现语音+视觉单镜像合一）。
-3. 长期：3c/3d 设备验证、罗盘问题、RF 实测与日本法规、8 小时稳定性、展台镜像验收。
+1. **烧录并验证阶段 4c（`0.9.2-stage4c`）**：在 ESP32-S31 真机上测试 Game 页「カメラ」按钮点亮、状态指示、青色准星及头部移动控制迷宫小球的实机手感。
+2. 长期：3c/3d 设备验证、罗盘问题、RF 实测与日本法规、8 小时稳定性、展台镜像验收。
+
 

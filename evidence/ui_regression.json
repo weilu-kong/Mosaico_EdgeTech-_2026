@@ -2,7 +2,7 @@
   "total": 20,
   "passed": 20,
   "failed": 0,
-  "seconds": 35.4,
+  "seconds": 35.0,
   "notes": {
     "attitude_worst_error_deg": 0.1,
     "magcal_seconds": 19.0,
@@ -69,25 +69,25 @@
       "name": "slide_off_cancels_press",
       "status": "pass",
       "detail": "",
-      "seconds": 1.8
+      "seconds": 1.7
     },
     {
       "name": "attitude_matches_ground_truth",
       "status": "pass",
       "detail": "",
-      "seconds": 1.6
+      "seconds": 1.7
     },
     {
       "name": "relative_yaw_and_reset",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "magnetometer_calibration_and_heading",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.8
     },
     {
       "name": "motion_events",
@@ -117,13 +117,13 @@
       "name": "game_tilt_direction",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "game_touch_control",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "game_bot_completes_all_difficulties",
@@ -147,19 +147,19 @@
       "name": "idle_return_and_attract_tour",
       "status": "pass",
       "detail": "",
-      "seconds": 1.9
+      "seconds": 1.7
     },
     {
       "name": "attract_is_silent",
       "status": "pass",
       "detail": "",
-      "seconds": 1.7
+      "seconds": 1.6
     },
     {
       "name": "module_and_fault_states",
       "status": "pass",
       "detail": "",
-      "seconds": 1.6
+      "seconds": 1.8
     },
     {
       "name": "voice_control",
@@ -171,7 +171,7 @@
       "name": "determinism",
       "status": "pass",
       "detail": "",
-      "seconds": 3.6
+      "seconds": 3.4
     }
   ],
   "scope": "Host simulator with synthetic sensors; not a device or RF result"

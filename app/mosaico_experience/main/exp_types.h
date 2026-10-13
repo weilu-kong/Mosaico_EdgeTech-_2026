@@ -17,6 +17,7 @@ enum {
     EXP_SENS_MIC = 1u << 2,
     EXP_SENS_BATT = 1u << 3,
     EXP_SENS_JOY = 1u << 4,
+    EXP_SENS_FACE = 1u << 5,      /* camera + face detector running in 480x480 view */
     EXP_SENS_SIMULATED = 1u << 8, /* every value is synthetic (Host only)   */
 };
 
@@ -88,6 +89,11 @@ typedef struct {
     uint8_t joy_buttons;  /* bit n = button n (B,1,2,3,4) */
     exp_joy_state_t joy_state;
 
+    bool face_found;      /* valid with EXP_SENS_FACE                        */
+    int16_t face_x, face_y, face_w, face_h; /* 480x480 view coordinates      */
+    uint8_t face_conf_pct;/* 0..100 confidence                               */
+    uint16_t face_infer_ms;/* last inference latency in ms                   */
+
     uint8_t battery_pct;  /* valid with EXP_SENS_BATT                        */
     bool charging;
 
@@ -109,6 +115,29 @@ typedef struct {
     uint32_t dsp_time_us; /* last platform-measured audio DSP duration (0=n/a) */
     const char *fw_version;
 } exp_sensors_t;
+
+/* Maps a 480x480 face bounding box to normalized maze tilt acceleration (ax, ay) in [-0.6, +0.6].
+ * Deadzone of 12 px around the frame centre (240, 240); full deflection (0.6) at 110 px offset. */
+static inline void exp_face_box_to_tilt(int x, int y, int w, int h, float *ax, float *ay)
+{
+    const int cx = x + w / 2;
+    const int cy = y + h / 2;
+    const int dx = cx - 240;
+    const int dy = cy - 240;
+    const int dead = 12;
+    const float span = 98.0f; /* 110 - 12 */
+    float ox = 0.0f, oy = 0.0f;
+    if (dx > dead) ox = (float)(dx - dead) / span * 0.6f;
+    else if (dx < -dead) ox = (float)(dx + dead) / span * 0.6f;
+    if (dy > dead) oy = (float)(dy - dead) / span * 0.6f;
+    else if (dy < -dead) oy = (float)(dy + dead) / span * 0.6f;
+    if (ox > 0.6f) ox = 0.6f;
+    if (ox < -0.6f) ox = -0.6f;
+    if (oy > 0.6f) oy = 0.6f;
+    if (oy < -0.6f) oy = -0.6f;
+    if (ax) *ax = ox;
+    if (ay) *ay = oy;
+}
 
 typedef enum {
     EXP_EFFECT_NONE = 0,

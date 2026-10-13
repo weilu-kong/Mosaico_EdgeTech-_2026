@@ -15,6 +15,7 @@
 
 /* ---- Small helpers ------------------------------------------------------------ */
 bool app_joystick_present(const exp_app_t *app) { return (app->s.flags & EXP_SENS_JOY) != 0; }
+bool app_camera_present(const exp_app_t *app) { return app->s.slot_left == EXP_MOD_CAMERA || (app->s.flags & EXP_SENS_FACE) != 0; }
 
 const char *app_module_name(exp_module_t m)
 {
@@ -92,6 +93,12 @@ void app_goto(exp_app_t *app, exp_page_t page, bool user)
 
 bool exp_app_attract(const exp_app_t *app) { return app->attract; }
 exp_page_t exp_app_page(const exp_app_t *app) { return app->page; }
+bool exp_app_want_camera(const exp_app_t *app)
+{
+    if (!app || app->attract || app->page != EXP_PAGE_GAME || !app_camera_present(app)) return false;
+    if (app->maze.phase == MZ_MENU) return app->input_mode == INPUT_FACE;
+    return !app->maze.demo && app->play_input == INPUT_FACE;
+}
 const exp_layout_report_t *exp_app_layout(const exp_app_t *app) { return &app->layout; }
 
 /* ---- Lifecycle ---------------------------------------------------------------------- */
@@ -627,6 +634,7 @@ int exp_app_state_json(const exp_app_t *a, char *out, size_t cap)
         "\"pitch\":%.1f,\"roll\":%.1f,\"yaw\":%.1f,\"yaw_absolute\":%s,\"vad\":%s,\"level_db\":%.1f,"
         "\"maze_phase\":%d,\"maze_diff\":%d,\"score\":%ld,\"hits\":%u,\"falls\":%u,\"time_left\":%.1f,\"demo\":%s,"
         "\"input\":%d,\"simulated\":%s,\"rf\":%d,\"ai\":%d,\"voice_listening\":%s,\"voice_cmd\":%d,\"voice_prob\":%d,\"voice_ignored\":%s,\"dsp_us\":%.0f,"
+        "\"face_ok\":%s,\"face_found\":%s,\"face_x\":%d,\"face_y\":%d,\"face_conf\":%d,\"face_ms\":%d,"
         "\"ball_x\":%.1f,\"ball_y\":%.1f,\"maze_n\":%u,\"best\":[%ld,%ld,%ld],\"tilt_count\":%lu,\"flip_count\":%lu,"
         "\"shake_count\":%lu,\"magcal_running\":%s,\"magcal_done\":%s,\"mag_ut\":%.1f,\"mag_head\":%.1f,\"mag_head_ok\":%s,\"mag_disturbed\":%s,\"vad_voice_ratio\":%.2f,\"fx_pending\":%d,"
         "\"layout\":{\"texts\":%d,\"text_overlaps\":%d,\"shape_overlaps\":%d,\"off_screen\":%d,\"truncated\":%d,"
@@ -637,7 +645,10 @@ int exp_app_state_json(const exp_app_t *a, char *out, size_t cap)
         (int)m->phase, (int)m->diff, (long)m->score, (unsigned)m->hits, (unsigned)m->falls, (double)m->time_left_s,
         m->demo ? "true" : "false", (int)page_game_input(a), (a->s.flags & EXP_SENS_SIMULATED) ? "true" : "false",
         (int)a->s.rf, (int)a->s.ai, a->voice_listening ? "true" : "false", (int)a->voice_last_cmd, (int)a->voice_last_prob,
-        a->voice_last_ignored ? "true" : "false", (double)a->dsp_us, (double)m->bx, (double)m->by, (unsigned)m->n,
+        a->voice_last_ignored ? "true" : "false", (double)a->dsp_us,
+        (a->s.flags & EXP_SENS_FACE) ? "true" : "false", a->s.face_found ? "true" : "false",
+        (int)a->s.face_x, (int)a->s.face_y, (int)a->s.face_conf_pct, (int)a->s.face_infer_ms,
+        (double)m->bx, (double)m->by, (unsigned)m->n,
         (long)m->best[0], (long)m->best[1], (long)m->best[2], (unsigned long)a->motion.tilt_count,
         (unsigned long)a->motion.flip_count, (unsigned long)a->motion.shake_count, a->magcal.running ? "true" : "false",
         a->magcal.done ? "true" : "false", (double)a->mag_field_ut, (double)a->mag_head_deg, a->mag_head_ok ? "true" : "false", a->mag_disturbed ? "true" : "false", (double)a->audio.voice_ratio, a->fx_n, a->layout.texts, a->layout.text_overlaps,

@@ -166,7 +166,7 @@
   },
   "game_menu": {
     "layout": {
-      "texts": 22,
+      "texts": 23,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,
@@ -178,6 +178,36 @@
     "page": 3,
     "attract": false,
     "maze_phase": 0
+  },
+  "game_menu_camera": {
+    "layout": {
+      "texts": 23,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 0
+  },
+  "game_playing_face": {
+    "layout": {
+      "texts": 5,
+      "text_overlaps": 0,
+      "shape_overlaps": 0,
+      "off_screen": 0,
+      "truncated": 0,
+      "small_targets": 0,
+      "missing_glyphs": 0,
+      "first": ""
+    },
+    "page": 3,
+    "attract": false,
+    "maze_phase": 2
   },
   "game_countdown": {
     "layout": {
@@ -391,7 +421,7 @@
   },
   "game_menu_no_imu": {
     "layout": {
-      "texts": 22,
+      "texts": 23,
       "text_overlaps": 0,
       "shape_overlaps": 0,
       "off_screen": 0,

@@ -42,6 +42,30 @@ static inline void dev_face_box_center(dev_face_box_t b, int *cx, int *cy)
     if (cy) *cy = b.y + b.h / 2;
 }
 
+/* Maps a 480x480 face bounding box to normalized maze tilt acceleration (ax, ay) in [-0.6, +0.6].
+ * Deadzone of 12 px around the frame centre (240, 240); full deflection (0.6) at 110 px offset. */
+static inline void dev_face_box_to_tilt(dev_face_box_t b, float *ax, float *ay)
+{
+    int cx = 0, cy = 0;
+    dev_face_box_center(b, &cx, &cy);
+    const int dx = cx - 240;
+    const int dy = cy - 240;
+    const int dead = 12;
+    const float span = 98.0f; /* 110 - 12 */
+    float ox = 0.0f, oy = 0.0f;
+    if (dx > dead) ox = (float)(dx - dead) / span * 0.6f;
+    else if (dx < -dead) ox = (float)(dx + dead) / span * 0.6f;
+    if (dy > dead) oy = (float)(dy - dead) / span * 0.6f;
+    else if (dy < -dead) oy = (float)(dy + dead) / span * 0.6f;
+    if (ox > 0.6f) ox = 0.6f;
+    if (ox < -0.6f) ox = -0.6f;
+    if (oy > 0.6f) oy = 0.6f;
+    if (oy < -0.6f) oy = -0.6f;
+    if (ax) *ax = ox;
+    if (ay) *ay = oy;
+}
+
 #ifdef __cplusplus
 }
 #endif
+

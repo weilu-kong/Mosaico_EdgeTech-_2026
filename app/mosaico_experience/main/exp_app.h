@@ -63,6 +63,7 @@ size_t exp_app_pop_effects(exp_app_t *app, exp_effect_t *out, size_t capacity);
 /* ---- Introspection for the Host simulator and tests ------------------------ */
 exp_page_t exp_app_page(const exp_app_t *app);
 bool exp_app_attract(const exp_app_t *app);
+bool exp_app_want_camera(const exp_app_t *app);
 const exp_layout_report_t *exp_app_layout(const exp_app_t *app);
 int exp_app_state_json(const exp_app_t *app, char *out, size_t capacity);
 uint32_t exp_app_state_hash(const exp_app_t *app);
@@ -71,3 +72,4 @@ void exp_app_debug_goto(exp_app_t *app, exp_page_t page);
 void exp_app_debug_flags(exp_app_t *app, uint32_t flags);
 void exp_app_debug_game_start(exp_app_t *app, int diff, bool demo);
 int exp_app_debug_maze_phase(const exp_app_t *app);
+

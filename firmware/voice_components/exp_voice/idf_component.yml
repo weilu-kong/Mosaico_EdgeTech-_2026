@@ -2,8 +2,9 @@
 # been resolved for the same target (esp32s31). esp-sr is offline: it contains no network or radio code.
 dependencies:
   espressif/esp-sr: "==2.5.3"
-  espressif/esp-dl: "==3.3.11"
+  espressif/esp-dl: ">=3.3.11"
   espressif/dl_fft:
     version: "==0.7.0"
     rules:
       - if: "target == esp32s31"
+

@@ -17,7 +17,7 @@ enum {
     BTN_YAW_RESET, BTN_MAG_CAL,
     BTN_SPK_TEST,
     BTN_DIFF_0, BTN_DIFF_1, BTN_DIFF_2,
-    BTN_IN_TILT, BTN_IN_JOY, BTN_IN_TOUCH,
+    BTN_IN_TILT, BTN_IN_JOY, BTN_IN_FACE, BTN_IN_TOUCH,
     BTN_START, BTN_EXIT_GAME, BTN_RETRY, BTN_TO_MENU,
     TAB_BASE = 100,
 };
@@ -40,7 +40,7 @@ typedef struct {
     uint8_t kind;  /* 0 down, 1 move, 2 up */
 } ptr_event_t;
 
-typedef enum { INPUT_TILT = 0, INPUT_JOY, INPUT_TOUCH } game_input_t;
+typedef enum { INPUT_TILT = 0, INPUT_JOY, INPUT_TOUCH, INPUT_FACE } game_input_t;
 
 struct exp_app {
     exp_app_config_t cfg;
@@ -118,6 +118,7 @@ void app_goto(exp_app_t *app, exp_page_t page, bool user);
 void app_activity(exp_app_t *app);
 bool app_game_fullscreen(const exp_app_t *app);
 bool app_joystick_present(const exp_app_t *app);
+bool app_camera_present(const exp_app_t *app);
 const char *app_module_name(exp_module_t m);
 
 /* ui helpers (exp_ui.c) */
