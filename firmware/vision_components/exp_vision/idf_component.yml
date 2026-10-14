@@ -6,7 +6,6 @@ dependencies:
   mosaico_module_camera:
     version: "*"
     override_path: "../../../workspace/esp-mosaico-vibe/submodule/esp-mosaico-bsp/components/mosaico_module_camera"
-  espressif/human_face_detect: "^0.5.1"
   espressif/hand_detect: "^0.2.0"
   espressif/esp-dl: "^3.3.13"
 

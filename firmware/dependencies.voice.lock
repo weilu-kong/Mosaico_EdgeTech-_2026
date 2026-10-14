@@ -44,7 +44,7 @@ dependencies:
     - esp32s31
     version: 0.2.0
   espressif/bq27220:
-    component_hash: 9b1c466ddfae07036c03cc1c2558466f343f604ae0cc5240deec6945441e38a0
+    component_hash: 6f216c63304baed177cd70bdb1654223e55dfbf3ff5a272d793eed3e3be15e6d
     dependencies:
     - name: espressif/cmake_utilities
       registry_url: https://components.espressif.com
@@ -60,7 +60,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 0.1.2
+    version: 0.1.3
   espressif/button:
     component_hash: a1f34e8ed2e61ffef1a230fd9477005c2db335c7e1f6a239f43e5f119dcbe1b0
     dependencies:
@@ -103,7 +103,7 @@ dependencies:
       type: service
     version: 1.1.0
   espressif/dl_fft:
-    component_hash: 3e8f7d34e04bfa6333f289a6d126745bebe0cee9311b81a6a5d106047f63ef65
+    component_hash: 965be7152132b365061abf5fc5fc7b85e525f73b94a204cdda61cfe9572c0d77
     dependencies:
     - name: idf
       require: private
@@ -111,14 +111,14 @@ dependencies:
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 0.7.0
+    version: 0.8.0
   espressif/esp-dl:
-    component_hash: 233ee8d37dfedeb637fc74713b87bd861ac530cfbcc4c63c57c2e51064cdda31
+    component_hash: 3148b2692a2943d7e35401dc10a181b6ba83515ec70ef51499ac5d2593eef3e2
     dependencies:
     - name: espressif/dl_fft
       registry_url: https://components.espressif.com
       require: private
-      version: '>=0.6.0'
+      version: '>=0.8.0'
     - name: espressif/esp_new_jpeg
       registry_url: https://components.espressif.com
       require: private
@@ -139,7 +139,7 @@ dependencies:
     - esp32s2
     - esp32s3
     - esp32s31
-    version: 3.3.11
+    version: 3.3.13
   espressif/esp-dsp:
     component_hash: 12e44db246517a627bc0fe2b255b8335410c0215c98bfba2df5a8e3edea839ef
     dependencies:
@@ -247,6 +247,26 @@ dependencies:
     - esp32c61
     - esp32h4
     version: 1.0.2
+  espressif/esp_tinyusb:
+    component_hash: cfb066b239957ebfba5f7a7764e534b3000d3b400fd42d11bedb6ee5e6eaf3c9
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    - name: espressif/tinyusb
+      registry_url: https://components.espressif.com
+      require: public
+      version: '>=0.17.0~2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    targets:
+    - esp32s2
+    - esp32s3
+    - esp32p4
+    - esp32h4
+    - esp32s31
+    version: 2.4.0
   espressif/i2c_bus:
     component_hash: 483112c1619c54c38d0b734fb25f1678733267858a77b7af2f48cc7db6dbbd84
     dependencies:
@@ -261,6 +281,16 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.5.2
+  espressif/mdns:
+    component_hash: 3ba256ac95e07c274be53cbd73f06cb846c403b61e8fbdf1be57bdb79db7a63e
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.12.0
   espressif/spi_nand_flash:
     component_hash: aa7bae693eee90b2e5e7cd63e67d41f5c30e61a501873b5c2d02838b1b9df6b8
     dependencies:
@@ -275,6 +305,22 @@ dependencies:
       registry_url: https://components.espressif.com/
       type: service
     version: 1.4.4
+  espressif/tinyusb:
+    component_hash: 16c8d774dab1f484d3e0c0f61105624d2424bbae864efd19818baf7b451b41e7
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    targets:
+    - esp32s2
+    - esp32s3
+    - esp32p4
+    - esp32h4
+    - esp32s31
+    version: 0.21.0~2
   espressif2022/bmi270:
     component_hash: 6c6637680a233845d13961f23df39426a7fad9c02c6c289bf8facbb7f8624e22
     dependencies:
@@ -352,9 +398,11 @@ direct_dependencies:
 - espressif/dl_fft
 - espressif/esp-dl
 - espressif/esp-sr
+- espressif/esp_tinyusb
+- espressif/mdns
 - idf
 - mosaico_module_joystick
 - mosaico_module_mgr
-manifest_hash: e4b33455faadca31f4cd48b73b83771c9cc3e701056d3c81085764db4e80e097
+manifest_hash: 3557e24424df84758a7a75805352287cef015db44047c62cb1dc2c7fa29aa771
 target: esp32s31
 version: 3.0.0

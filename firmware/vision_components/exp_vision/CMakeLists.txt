@@ -4,5 +4,5 @@
 idf_component_register(
     SRCS "dev_camera.c" "dev_face_detect.cpp"
     INCLUDE_DIRS "include"
-    PRIV_REQUIRES mosaico_module_camera esp_driver_ppa esp_mm esp_timer freertos heap log human_face_detect hand_detect esp-dl)
+    PRIV_REQUIRES mosaico_module_camera esp_driver_ppa esp_mm esp_timer freertos heap log hand_detect esp-dl)
 

@@ -94,7 +94,7 @@ python3 ../scripts/rf_map_check.py <build>/mosaico_experience.map <build>/sdkcon
 
 * 语音烧录：`scripts/voice_flash.sh check|write|update|coredump <端口>`；写入需 `VOICE_FLASH_CONFIRM=yes`；先 `check`（只读，核对 MAC 与分区表）。
 * 视觉烧录：`scripts/vision_flash.sh check|update|coredump <端口>`，需 `VISION_FLASH_CONFIRM=yes`；只写 app(0x10000)，写前强制 `check` 通过（30 分钟印记）。
-* 分区表（语音/视觉）：nvs 0x9000/24K、phy_init 0xf000/4K、factory 0x10000/5M、model 0x510000/4M(spiffs)、coredump 0x910000/512K。
+* 分区表（语音/视觉/同构）：nvs 0x9000/24K、phy_init 0xf000/4K、factory 0x10000/6M、model 0x610000/4M(spiffs)、coredump 0xa10000/512K。
 * 烧完黑屏先按 Reset。崩溃诊断：`<script> coredump <端口>` 只读取出再用 `esp-coredump` 解码。
 * 展台镜像：`-DEXP_RELEASE=1` + `scripts/release_check.py`；开发镜像带调试叠加层，不得上展台。
 
@@ -103,17 +103,17 @@ python3 ../scripts/rf_map_check.py <build>/mosaico_experience.map <build>/sdkcon
 用户 2026-10-11 同意：做摄像头功能；"头部/颜色控制迷宫、手势导航都加上"。分步：
 
 * **4a（设备已验证，2026-10-11）**：BSP `mosaico_module_camera`(左槽,DVP, SC101IOT 1280×720 UYVY) → PPA 裁剪/旋转/缩放 → 480×480 RGB565 → 屏幕叠加实测 15.6 fps / 63.9 ms / PSRAM 8399 KB。预设 1/8 方向正向。
-* **4b（设备已验证，2026-10-13）**：实测 `espressif/human_face_detect` (MSRMNP-s8 V1) 在 ESP32-S31 上的速度为 **`46.6 ms / 21.4 fps`**。模型内嵌于 Flash `.rodata`（App 体积 3.80 MB，5 MB factory 分区余 24%），Core 1 异步推理对 15.7 fps 预览流零阻塞，PSRAM 剩余 4660 KB。
-* **4c（已编码、已编译、模拟器已验证，2026-10-13）**：基于 4b 实测的 21.4 fps 人脸框坐标，实现 Tilt Maze「カメラ」头部位置控制迷宫（`INPUT_FACE`、青色准星、按需启停相机与恢复 GPIO33），通过全套模拟器回归与 ESP-IDF 编译及 RF 审计（`0.9.2-stage4c`）。
-* 硬件陷阱：相机 D2 = GPIO33 = USB Serial/JTAG D−，相机打开期间 USB 口不可用，控制台必须是 UART；相机只能插左槽；传感器确认为 SC101IOT 1280×720@25 UYVY。
+* **4b（设备已验证，2026-10-13）**：实测 `espressif/human_face_detect` (MSRMNP-s8 V1) 在 ESP32-S31 上的速度为 **`46.6 ms / 21.4 fps`**。模型内嵌于 Flash `.rodata`。
+* **4c（设备已验证，2026-10-13）**：切换为 `hand_detect` (ESPDet-Pico 224×224)，Core 1 原生降采样 480×480→224×224，方案 A 高增益手势控制（18 px 死区 + 1.6× 增益），画中画实时跟踪。
+* **同构固件合并（设备已验证，2026-10-14）**：合并语音识别（ESP-SR）与手势跟踪（ESPDet）于一体（App ~5.28 MB，6 MB 分区），关闭屏幕黄色调试叠层（`EXP_TIMING_OVERLAY=0`），利用 ESP-Iris USB CDC0 流式输出日志，配置 `.bk_buffer_dis = true` 优化 DVP 内存。用户真机测试确认效果优异。
 
 ## 9. 已知问题速览（完整见 `docs/10`）
 
-B19 板上 Recovery 已擦除 · B21 运行时无串口 · B32 BQ27220 配置被官方驱动改写(已改只读) · B38 罗盘偏差 · B39 3c 未上板 · B40 3d 未上板 · B41/B42 日语语音是"音译英语"+未测识别率 · B43 双唤醒词 PANIC · B44 4a 设备已验证 · B45 4b 人脸检测基准设备已验证(46.6 ms / 21.4 fps) · B46 4c 面部跟踪迷宫控制已编译与模拟器验证，待上板。
+B19 板上 Recovery 已擦除 · B21 运行时无串口 · B32 BQ27220 配置被官方驱动改写(已改只读) · B38 罗盘偏差 · B39 3c 未上板 · B40 3d 未上板 · B41/B42 日语语音是"音译英语"+单唤醒词已验证 · B43 双唤醒词 PANIC · B44 4a 设备已验证 · B45 4b 人脸检测基准设备已验证 · B46 4c 手势跟踪与同构固件设备已验证。
 
 ## 10. 立即要做的事（按顺序）
 
-1. **烧录并验证阶段 4c（`0.9.2-stage4c`）**：在 ESP32-S31 真机上测试 Game 页「カメラ」按钮点亮、状态指示、青色准星及头部移动控制迷宫小球的实机手感。
+1. **推送 feature/vision 分支至远程 GitHub 仓库**。
 2. 长期：3c/3d 设备验证、罗盘问题、RF 实测与日本法规、8 小时稳定性、展台镜像验收。
 
 

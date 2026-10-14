@@ -1,9 +1,8 @@
 # Name,   Type, SubType, Offset,   Size,     Flags
-# Voice build only (idf.py -B build_voice -DEXP_VOICE=1). The app stays at 0x10000 like in the default table.
-# "model" holds the ESP-SR models (MultiNet7 English ~2.8 MB, two WakeNet9 models ~0.6 MB); the label must be "model".
+# Voice/Vision combined build (factory app 6 MB, model 4 MB, coredump 512 KB).
+# The 16 MB flash has ample space (partitions end at 0xa90000 = 10.56 MB; 5.44 MB remains free).
 nvs,      data, nvs,     0x9000,   24K,
 phy_init, data, phy,     0xf000,   4K,
-factory,  app,  factory, 0x10000,  0x500000,
-model,    data, spiffs,  0x510000, 0x400000,
-# Crash dump (stage 3e diagnosis): lets the next start read why the voice build panicked. 0x910000 = end of "model".
-coredump, data, coredump, 0x910000, 0x80000,
+factory,  app,  factory, 0x10000,  0x600000,
+model,    data, spiffs,  0x610000, 0x400000,
+coredump, data, coredump, 0xa10000, 0x80000,

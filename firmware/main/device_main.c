@@ -308,12 +308,10 @@ static void run_boot_bench(exp_app_t *app)
 }
 #endif
 
-/* Development aid (stage 3a): a one-line frame-cost readout on the panel, because the USB serial console is
- * not reachable while the app runs. Values are measured on this board, in milliseconds.
- *   now = previous whole frame, max = worst frame of the last 60, d = avg draw, p = avg panel transfer.
- * Remove (or set EXP_TIMING_OVERLAY to 0) before the exhibition. */
+/* Development aid (stage 3a): a one-line frame-cost readout on the panel.
+ * Disabled now since ESP-Iris over USB CDC0 provides live real-time logging without covering the screen. */
 #ifndef EXP_TIMING_OVERLAY
-#define EXP_TIMING_OVERLAY 1
+#define EXP_TIMING_OVERLAY 0
 #endif
 #if EXP_RELEASE && (EXP_TIMING_OVERLAY || EXP_BOOT_BENCH || EXP_DBGLOG)
 #error "EXP_RELEASE must not include the timing overlay, the boot benchmark or the screen log"

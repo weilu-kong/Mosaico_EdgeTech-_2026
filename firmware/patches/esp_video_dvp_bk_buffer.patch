@@ -1,0 +1,10 @@
+--- a/src/device/esp_video_dvp_device.c
++++ b/src/device/esp_video_dvp_device.c
+@@ -274,6 +274,7 @@ static esp_err_t dvp_video_start(esp_video_device_common_t *common, esp_cam_ct
+ #if DVP_DRIVER_HAS_EXTERNAL_XTAL
+         .external_xtal = true,
+ #endif
++        .bk_buffer_dis = true,
+     };
+     ret = esp_cam_new_dvp_ctlr_ext(&dvp_config, &cam_ctrl_handle);
+     if (ret != ESP_OK) {

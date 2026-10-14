@@ -4,7 +4,7 @@ dependencies:
   espressif/esp-sr: "==2.5.3"
   espressif/esp-dl: ">=3.3.11"
   espressif/dl_fft:
-    version: "==0.7.0"
+    version: ">=0.7.0"
     rules:
       - if: "target == esp32s31"
 

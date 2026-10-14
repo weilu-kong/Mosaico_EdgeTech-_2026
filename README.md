@@ -38,9 +38,12 @@
 | 3b‑2 | 磁力计 / 罗盘 | 已编码 + 模拟器测试；设备读数仍偏差大，原因未定（`docs/10` B38） |
 | 3c | 麦克风、扬声器、马达、扩展槽探测、运行时 RF 探针 | 已编码 + 主机测试；设备验证**未执行**（`docs/10` B39） |
 | 3d | 摇杆、烧屏调光、看门狗、磁场干扰判断、展台发布配置 | 已编码 + 主机测试；设备验证**未执行**（`docs/10` B40） |
-| 3e | 日语离线语音操作（ESP‑SR） | 已编码、已编译、已烧录（0.8.x）；**识别率、误唤醒率未测量**（`docs/11`、`docs/10` B42/B43） |
-| 4a | 摄像头预览与帧时间测量（`-DEXP_VISION=1`，`docs/12`） | 已编码 + 主机测试；**未用真实 IDF 编译、未烧录、无实测数字** |
-| 4–5 | 全面设备验证、稳定性、RF 实测、运营 | **未开始** |
+| 3e | 日语离线语音操作（ESP‑SR） | **设备已验证**（单唤醒词 + 基础指令正常响应，`docs/11`） |
+| 4a | 摄像头预览与帧时间测量（`-DEXP_VISION=1`） | **设备已验证**（15.6 fps，SC101IOT UYVY，`docs/12`） |
+| 4b | ESPDet 人脸检测基准与实时框 | **设备已验证**（S31 推理 46.6 ms / 21.4 fps，`docs/12`） |
+| 4c | Tilt Maze 手势跟踪控制、PiP 与 Iris USB CDC0 日志 | **设备已验证**（方案 A 高增益手势控制跟手灵敏，`docs/12`） |
+| 合并 | 语音控制 + 视觉手势跟踪同构固件（6 MB App 分区） | **设备已验证**（ESP-SR + ESPDet 协同运行，屏幕无遮挡黄色日志，Iris USB CDC0 实时传输） |
+| 4–5 | 全面稳定性、长时间运行、RF 实测、展会运营 | 进行中 / 部分待实测 |
 
 ---
 
@@ -146,15 +149,16 @@ python3 ../scripts/rf_map_check.py build/mosaico_experience.map sdkconfig   # �
 
 ---
 
-## 视觉（阶段 4a，开发分支 `feature/vision`）
+## 视觉与语音同构固件（阶段 4a–4c，开发分支 `feature/vision`）
+ 
+在当前分支上实现了**离线日语语音控制（ESP-SR）+ 摄像头手势跟踪（ESPDet）同构固件**（`-DEXP_VOICE=1 -DEXP_VISION=1`）：
+* **分区表结构**：`factory` 分区扩充至 6.0 MB（`0x600000`），`model` 语音模型分区设于 `0x610000`（4.0 MB），`coredump` 设于 `0xa10000`（512 KB），总占用 10.56 MB / 16 MB Flash（余量 5.44 MB）。
+* **视觉流水线**：官方 BSP 摄像头模块（左槽，SC101IOT，DVP）→ PPA 硬件变换（720×720→480×480 RGB565）→ Core 1 异步手部检测（`hand_detect` ESPDet-Pico 224×224）。
+* **迷宫手势控制**：Tilt Maze「カメラ」模式，采用方案 A 高增益映射（18 px 死区 + 1.6× 增益），微动灵敏跟手，菜单与 HUD 画中画（PiP）实时反馈手势姿态与跟踪框。
+* **干净显示与免冲突日志**：完全移除屏幕顶部的黄色调试叠层（`EXP_TIMING_OVERLAY=0`），利用 ESP32-S31 高速 USB OTG UTMI PHY 建立 ESP-Iris USB CDC0 日志通道（`scripts/iris_log.py`），实时诊断且不影响屏幕展示。
+* **DVP 内存优化**：在 `esp_video_dvp_device.c` 中显式指定 `.bk_buffer_dis = true`，省去驱动冗余的 1.84 MB PSRAM backup buffer，彻底解决高并发下的 DVP 分配阻塞。
 
-在稳定版本 `stable-stage3e-0.8.1`（tag）之上开发摄像头功能。当前只有 4a：用官方 BSP 的摄像头模块（左槽，DVP）→ PPA 裁剪/旋转/缩放 → 480×480 预览，并在屏幕上显示**板上实测**的 fps 与各阶段耗时（`-DEXP_VISION=1`，目录 `build_vision`）。
-
-* 状态：**已编码；主机测试 + 桩头文件类型检查 + RF 静态扫描通过；未用真实 IDF 编译，未烧录，没有任何实测数字。** 说明与验证清单见 `docs/12`。
-* 相机数据线 D2 与 USB Serial/JTAG 的 D− 共用 GPIO33，相机打开期间 USB 口不可用。
-* 后续计划（均**未开始**）：4b 人脸检测速度实测（ESPDet‑pico，S31 上速度未知）；4c 头部 / 颜色 / 手势控制迷宫与手势导航，以及与语音的组合。
-
-回退到语音稳定版本：`git checkout stable-stage3e-0.8.1`。
+回退到纯语音版本：`git checkout stable-stage3e-0.8.1`。
 
 ---
 

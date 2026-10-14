@@ -142,15 +142,16 @@ It covers font-data reproducibility, gcc/clang `-Werror` builds and native unit 
 
 ---
 
-## Vision (stage 4a, development branch `feature/vision`)
+## Unified Voice + Vision Firmware (Stages 4a–4c, development branch `feature/vision`)
+ 
+This branch provides a **unified offline firmware with Japanese Voice Control (ESP-SR) and Camera Gesture Tracking (ESPDet)** (`-DEXP_VOICE=1 -DEXP_VISION=1`):
+* **Partition Layout**: `factory` partition expanded to 6.0 MB (`0x600000`), `model` voice partition at `0x610000` (4.0 MB), and `coredump` at `0xa10000` (512 KB), utilizing 10.56 MB out of 16.0 MB Flash (5.44 MB remaining).
+* **Vision Pipeline**: BSP camera module (left slot, SC101IOT, DVP) → PPA hardware transform (720×720→480×480 RGB565) → Core 1 async hand detection (`hand_detect` ESPDet-Pico 224×224).
+* **Gesture Maze Control**: Tilt Maze "Camera" mode featuring Scheme A high-gain response (18 px deadzone + 1.6× gain), responsive control, and PiP view in menus/HUD showing gesture target tracking.
+* **Clean AMOLED & Non-blocking Logging**: Yellow timing overlay completely removed from screen (`EXP_TIMING_OVERLAY=0`); ESP32-S31 high-speed USB OTG UTMI PHY provides ESP-Iris USB CDC0 logging stream (`scripts/iris_log.py`) without GPIO33 conflict.
+* **DVP Memory Optimization**: Configured `.bk_buffer_dis = true` in `esp_video_dvp_device.c`, saving 1.84 MB PSRAM redundant backup buffer to ensure smooth camera streaming.
 
-Camera work is developed on top of the stable tag `stable-stage3e-0.8.1`. Only 4a exists so far: the official BSP camera module (left slot, DVP) → PPA crop / rotate / scale → a 480×480 preview, with fps and per-stage times **measured on the board** drawn on screen (`-DEXP_VISION=1`, build dir `build_vision`).
-
-* Status: **coded; host tests, stub-header type checks and the RF static scan pass; not built with the real IDF, not flashed, no measured numbers.** See `docs/12` for the description and the verification checklist.
-* Camera data line D2 shares GPIO33 with USB Serial/JTAG D−, so the USB port is unavailable while the camera is open.
-* Planned, **not started**: 4b face-detection speed measurement (ESPDet-pico; speed on S31 unknown); 4c head / colour / hand-gesture maze control and gesture navigation, plus the combination with voice.
-
-To go back to the stable voice firmware: `git checkout stable-stage3e-0.8.1`.
+To roll back to the voice-only stable release: `git checkout stable-stage3e-0.8.1`.
 
 ---
 
